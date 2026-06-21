@@ -42,28 +42,34 @@ then produces three ready-to-file Thai legal documents via a 4-agent AI pipeline
 ## Repository Structure
 
 ```
-roomwitness-rag/
-├── agent01_cv/                   # Vision agent — Groq Llama-4-Scout
-│   ├── cv.py                     # Photo comparison logic
-│   ├── evidence.py               # Conversation screenshot extraction (LINE/WhatsApp)
-│   ├── models.py                 # CVResult schema + translate_to_cv_result()
-│   ├── main.py                   # POST /api/v1/agent01
-│   └── requirements.txt
-├── agent02_contract_parser/      # Lease contract PDF parser — Typhoon v2
-├── agent03_legal_reasoning/      # Legal brain — RAG + hard rules + Typhoon v2
-│   └── legal_corpus/             # OCPB 2568 + CCC §537-571 JSON chunks
-├── agent04_doc_generator/        # PDF renderer — ReportLab + Typhoon v2
-│   ├── templates/                # Document structure definitions
-│   └── fonts/                    # Place Sarabun .ttf files here
-├── shared/                       # Shared utilities
-│   ├── config.py                 # All env vars
-│   ├── typhoon_client.py         # Typhoon v2 LangChain wrapper
-│   └── s3_client.py              # S3 upload/download helpers
-├── legacy/                       # Pre-hackathon Groq prototype (not deployed)
-├── chroma_db/                    # ChromaDB vector store (auto-created by seed_corpus.py)
-├── .env.example                  # Copy to .env and fill in credentials
-└── README.md
+RoomWitness/                      # repo root
+├── nextjs-frontend/              # React UI — Next.js 14, TypeScript
+├── express-backend/              # API proxy server — Express.js
+└── roomwitness-rag/              # Python AI microservices
+    ├── services/                 # Bridge services for demo (ports 8001–8004)
+    │   ├── agent01_service.py    # CV assessment (Groq)
+    │   ├── agent02_service.py    # Contract parser (mock)
+    │   ├── agent03_service.py    # Legal reasoning (Groq + ChromaDB)
+    │   └── agent04_service.py    # Document generator (mock)
+    ├── agent01_cv/               # Vision agent — Groq Llama-4-Scout
+    │   ├── cv.py                 # Photo comparison logic
+    │   ├── evidence.py           # Conversation screenshot extraction (LINE/WhatsApp)
+    │   ├── models.py             # CVResult schema + translate_to_cv_result()
+    │   └── main.py               # Production FastAPI app (POST /api/v1/agent01)
+    ├── agent02_contract_parser/  # Lease contract PDF parser — Typhoon v2
+    ├── agent03_legal_reasoning/  # Legal brain — RAG + hard rules + Typhoon v2
+    │   └── legal_corpus/         # OCPB 2568 + CCC §537-571 JSON chunks
+    ├── agent04_doc_generator/    # PDF renderer — ReportLab + Typhoon v2
+    │   ├── templates/            # Document structure definitions
+    │   └── fonts/                # Place Sarabun .ttf files here
+    ├── shared/                   # Shared utilities (config, typhoon_client, s3_client)
+    ├── legacy/                   # Pre-hackathon Groq prototype (rag_agent.py)
+    ├── portal/                   # Original Flask portal (reference only)
+    ├── chroma_db/                # ChromaDB vector store (auto-created by seed_corpus.py)
+    └── .env.example              # Copy to .env and fill in credentials
 ```
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for full dev setup and code conventions.
 
 ## Prerequisites
 
@@ -109,7 +115,19 @@ Without them, ReportLab falls back to Helvetica — Thai characters will not ren
 
 ## Run All Agents
 
-Open four terminals from the `roomwitness-rag/` directory:
+### Option A — Bridge services (recommended for demo)
+
+The bridge services accept the same HTTP format as the frontend and run the working
+Flask portal logic. Start them from `roomwitness-rag/`:
+
+```bash
+uvicorn services.agent01_service:app --port 8001 --reload
+uvicorn services.agent02_service:app --port 8002 --reload
+uvicorn services.agent03_service:app --port 8003 --reload
+uvicorn services.agent04_service:app --port 8004 --reload
+```
+
+### Option B — Production FastAPI agents (requires S3 + Typhoon v2)
 
 ```bash
 uvicorn agent01_cv.main:app --port 8001 --reload
@@ -151,6 +169,22 @@ POST /api/v1/agent04  (receives verdicts + routing)  →  PDF download URLs
 ```
 
 Agent 01 is optional — pass `damage_map: []` to Agent 03 to skip CV and let Typhoon reason from contract + law alone.
+
+## Full Stack: Run Everything
+
+```bash
+# Terminal 1-4: Python bridge services (from roomwitness-rag/)
+uvicorn services.agent01_service:app --port 8001 --reload
+uvicorn services.agent02_service:app --port 8002 --reload
+uvicorn services.agent03_service:app --port 8003 --reload
+uvicorn services.agent04_service:app --port 8004 --reload
+
+# Terminal 5: Express backend
+cd express-backend && npm run dev    # http://localhost:3001
+
+# Terminal 6: Next.js frontend
+cd nextjs-frontend && npm run dev    # http://localhost:3000
+```
 
 ---
 

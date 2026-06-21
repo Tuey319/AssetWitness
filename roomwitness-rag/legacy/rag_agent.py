@@ -4,19 +4,17 @@ import os
 import json
 
 import chromadb
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from groq import Groq
-from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 
 load_dotenv()
 
 CHROMA_PATH = os.getenv("CHROMA_PATH", "./chroma_db")
-EMBED_MODEL = os.getenv("EMBED_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 COLLECTION_NAME = "thai_rental_law"
 
 _groq_client: Groq | None = None
-_embed_model: SentenceTransformer | None = None
 _collection = None
 
 
@@ -27,18 +25,14 @@ def _get_groq() -> Groq:
     return _groq_client
 
 
-def _get_embed_model() -> SentenceTransformer:
-    global _embed_model
-    if _embed_model is None:
-        _embed_model = SentenceTransformer(EMBED_MODEL)
-    return _embed_model
-
-
 def _get_collection():
     global _collection
     if _collection is None:
         chroma = chromadb.PersistentClient(path=CHROMA_PATH)
-        _collection = chroma.get_or_create_collection(name=COLLECTION_NAME)
+        _collection = chroma.get_or_create_collection(
+            name=COLLECTION_NAME,
+            embedding_function=DefaultEmbeddingFunction(),
+        )
     return _collection
 
 
@@ -69,16 +63,17 @@ def rewrite_query(claim_text: str) -> str:
 # ─── 2. Retrieval ───────────────────────────────────────────────────────────────
 
 def retrieve_law(query: str, topic_filter: str = None) -> list[dict]:
-    """Embed query locally and return top 4 matching chunks from ChromaDB."""
-    model = _get_embed_model()
+    """Retrieve top 4 matching law chunks from ChromaDB using DefaultEmbeddingFunction."""
     collection = _get_collection()
-
-    q_emb = model.encode([query]).tolist()
+    count = collection.count()
+    if count == 0:
+        return []
+    n = min(4, count)
     where = {"topic": topic_filter} if topic_filter else None
 
     results = collection.query(
-        query_embeddings=q_emb,
-        n_results=4,
+        query_texts=[query],
+        n_results=n,
         where=where,
         include=["documents", "metadatas", "distances"],
     )
@@ -189,7 +184,7 @@ def classify_claim(claim: dict, cv_evidence: dict, contract_clause: str) -> dict
     chunks = retrieve_law(rewritten)
 
     law_block = "\n\n".join(
-        f"[{c['metadata']['source']} มาตรา/ข้อ {c['metadata']['section']}]\n{c['text']}"
+        f"[{c['metadata'].get('law_name_en', c['metadata'].get('source', 'Law'))} — {c['metadata'].get('clause', c['metadata'].get('section', ''))}]\n{c['text']}"
         for c in chunks
     )
 
