@@ -1,19 +1,18 @@
-# Agent 02 — Conversation & evidence extraction: reads screenshots via Llama 4 Scout, surfaces landlord/tenant promises
+"""
+Conversation screenshot analyzer — reads LINE/WhatsApp/SMS screenshots via Groq Llama-4-Scout.
+Extracts promises, deposit mentions, and overall tone for use as supporting evidence in Agent 03.
+"""
 
-import os
-import json
-import re
 import base64
+import json
+import os
+import re
 from io import BytesIO
 
-from dotenv import load_dotenv
 from groq import Groq
 from PIL import Image
 
-load_dotenv()
-
 MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 def _encode_image(image_path: str) -> str:
@@ -28,10 +27,17 @@ def _encode_image(image_path: str) -> str:
     return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
-def extract_from_screenshot(image_path: str, screenshot_index: int) -> dict:
+def extract_from_screenshot(image_path: str, screenshot_index: int, client: Groq) -> dict:
     """
-    Send one conversation screenshot to Llama 4 Scout.
-    Returns structured extraction of messages, promises, and tone.
+    Send one conversation screenshot to Llama-4-Scout and extract structured evidence.
+
+    Args:
+        image_path: Local path to the screenshot image.
+        screenshot_index: 0-based index for prompt context.
+        client: Groq client instance.
+
+    Returns:
+        Structured extraction dict with messages, promises, tone.
     """
     system_prompt = (
         "You are an expert at reading chat screenshots (LINE, WhatsApp, iMessage, SMS, email). "
@@ -55,15 +61,9 @@ Return this exact JSON:
       "timestamp": "date/time if visible, else null"
     }}
   ],
-  "landlord_promises": [
-    "direct quote or paraphrase of any promise, commitment, or statement made by the landlord"
-  ],
-  "tenant_promises": [
-    "direct quote or paraphrase of any promise, commitment, or statement made by the tenant"
-  ],
-  "deposit_mentions": [
-    "any sentence that mentions deposit, refund, deduction, damage, repair costs"
-  ],
+  "landlord_promises": ["direct quote or paraphrase of any promise made by the landlord"],
+  "tenant_promises": ["direct quote or paraphrase of any promise made by the tenant"],
+  "deposit_mentions": ["any sentence that mentions deposit, refund, deduction, damage, repair costs"],
   "overall_tone": "cooperative" or "disputed" or "threatening" or "neutral",
   "key_date": "most relevant date mentioned, or null",
   "notes": "anything unusual, unreadable sections, or important context"
@@ -76,7 +76,7 @@ Rules:
 - landlord_promises and tenant_promises should capture anything that could be used as evidence"""
 
     b64 = _encode_image(image_path)
-
+    raw = ""
     try:
         response = client.chat.completions.create(
             model=MODEL,
@@ -117,27 +117,38 @@ Rules:
 
 
 def run_evidence_analysis(
-    screenshot_paths: list,
-    manual_landlord_promises: str = "",
-    manual_tenant_promises: str = "",
+    screenshot_paths: list[str],
+    manual_landlord_promises: str,
+    manual_tenant_promises: str,
+    client: Groq,
 ) -> dict:
     """
     Process all conversation screenshots plus manually entered promises.
-    Returns a unified evidence summary ready for the legal pipeline.
+
+    Returns a unified evidence dict. The `evidence_text` field is a plain-text
+    summary ready for injection into Agent 03's reasoning context.
+
+    Args:
+        screenshot_paths: Local paths to conversation screenshot images.
+        manual_landlord_promises: Newline-separated landlord statements entered by the tenant.
+        manual_tenant_promises: Newline-separated tenant statements.
+        client: Groq client instance.
+
+    Returns:
+        Dict matching EvidenceResult schema.
     """
     screenshot_results = []
     for i, path in enumerate(screenshot_paths):
-        result = extract_from_screenshot(path, i)
+        result = extract_from_screenshot(path, i, client)
         result["source_file"] = os.path.basename(path)
         screenshot_results.append(result)
 
-    # Aggregate across all screenshots
-    all_landlord_promises = []
-    all_tenant_promises   = []
-    all_deposit_mentions  = []
-    all_messages          = []
-    platforms_seen        = set()
-    unreadable_count      = 0
+    all_landlord_promises: list[str] = []
+    all_tenant_promises: list[str] = []
+    all_deposit_mentions: list[str] = []
+    all_messages: list[dict] = []
+    platforms_seen: set[str] = set()
+    unreadable_count = 0
 
     for r in screenshot_results:
         if not r.get("readable"):
@@ -150,21 +161,17 @@ def run_evidence_analysis(
         if r.get("platform"):
             platforms_seen.add(r["platform"])
 
-    # Merge manual entries
-    if manual_landlord_promises.strip():
-        for line in manual_landlord_promises.strip().splitlines():
-            line = line.strip("•-– ").strip()
-            if line:
-                all_landlord_promises.append(f"[Manual] {line}")
+    for line in manual_landlord_promises.strip().splitlines():
+        line = line.strip("•-– ").strip()
+        if line:
+            all_landlord_promises.append(f"[Manual] {line}")
 
-    if manual_tenant_promises.strip():
-        for line in manual_tenant_promises.strip().splitlines():
-            line = line.strip("•-– ").strip()
-            if line:
-                all_tenant_promises.append(f"[Manual] {line}")
+    for line in manual_tenant_promises.strip().splitlines():
+        line = line.strip("•-– ").strip()
+        if line:
+            all_tenant_promises.append(f"[Manual] {line}")
 
-    # Build a plain-text summary for the RAG pipeline
-    summary_lines = []
+    summary_lines: list[str] = []
     if all_landlord_promises:
         summary_lines.append("LANDLORD STATEMENTS/PROMISES:")
         summary_lines.extend(f"  • {p}" for p in all_landlord_promises)
@@ -183,9 +190,9 @@ def run_evidence_analysis(
         "platforms_detected": list(platforms_seen),
         "screenshot_details": screenshot_results,
         "all_landlord_promises": all_landlord_promises,
-        "all_tenant_promises":   all_tenant_promises,
-        "all_deposit_mentions":  all_deposit_mentions,
+        "all_tenant_promises": all_tenant_promises,
+        "all_deposit_mentions": all_deposit_mentions,
         "total_messages_extracted": len(all_messages),
-        "evidence_text": evidence_text,   # ← injected into RAG legal analysis
+        "evidence_text": evidence_text,
         "model_used": MODEL,
     }

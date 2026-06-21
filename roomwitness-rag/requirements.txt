@@ -1,9 +1,30 @@
-flask
+# RoomWitness — all agents
+# Install with: pip install -r requirements.txt
+
+# Web framework
+fastapi
+uvicorn[standard]
+pydantic>=2.0
+
+# LangChain + Typhoon v2 (Agents 02, 03, 04)
+langchain
+langchain-openai
+langchain-core
+
+# Vision LLM — Agent 01
 groq
+
+# OCR — Agent 02
+PyMuPDF
+pytesseract
+Pillow
+
+# RAG — Agent 03 (DefaultEmbeddingFunction uses onnxruntime, no PyTorch needed)
 chromadb
-sentence-transformers
-pdfplumber
-requests
-beautifulsoup4
+
+# PDF rendering — Agent 04
+reportlab
+
+# Storage + config
+boto3
 python-dotenv
-lxml
