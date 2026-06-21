@@ -4,490 +4,515 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RoomWitness</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
 
-  <!-- ── Header ─────────────────────────────────────────────────────────── -->
-  <header class="site-header">
-    <div class="header-left">
-      <h1>RoomWitness</h1>
-      <p>Thai Rental Deposit Dispute Analyzer</p>
-    </div>
-    <div class="corpus-badge" id="corpus-badge">
-      <div class="corpus-dot"></div>
-      <span>Corpus missing</span>
+  <header>
+    <div class="header-inner">
+      <div>
+        <h1>RoomWitness</h1>
+        <p class="subtitle">Thai Rental Deposit Dispute Analyzer</p>
+      </div>
+      <div id="corpus-status" class="corpus-pill corpus-loading">checking…</div>
     </div>
   </header>
 
-  <div class="page">
+  <main>
+    <form id="main-form" autocomplete="off">
 
-    <!-- ── Room Photos ─────────────────────────────────────────────────── -->
-    <div class="card">
-      <div class="section-label">
-        Room Photos
-        <span class="optional-pill">Optional but recommended</span>
-      </div>
-      <div class="photo-pair">
-        <!-- Move-in -->
-        <div class="drop-zone" id="dz-in" onclick="document.getElementById('fi-in').click()">
-          <input type="file" id="fi-in" class="file-input" accept="image/*"
-                 onchange="previewPhoto(this,'dz-in','movein')">
-          <div id="dz-in-inner">
-            <div class="dz-icon">
-              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <!-- ── Photos ─────────────────────────────── -->
+      <section class="card">
+        <h2>Room photos <span class="optional-tag">optional but recommended</span></h2>
+        <div class="photo-pair">
+
+          <div class="drop-zone" id="dz-movein">
+            <input type="file" id="move_in_image" name="move_in_image" accept="image/*" class="dz-input" />
+            <div class="dz-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <strong>Move-in photo</strong>
+              <span>Click or drag &amp; drop</span>
             </div>
-            <div class="dz-title">Move-in photo</div>
-            <div class="dz-sub">Click or drag &amp; drop</div>
+            <img class="dz-preview hidden" id="prev-movein" alt="" />
+            <button type="button" class="dz-clear hidden" id="clear-movein">✕</button>
           </div>
-        </div>
-        <!-- Move-out -->
-        <div class="drop-zone" id="dz-out" onclick="document.getElementById('fi-out').click()">
-          <input type="file" id="fi-out" class="file-input" accept="image/*"
-                 onchange="previewPhoto(this,'dz-out','moveout')">
-          <div id="dz-out-inner">
-            <div class="dz-icon">
-              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+
+          <div class="drop-zone" id="dz-moveout">
+            <input type="file" id="move_out_image" name="move_out_image" accept="image/*" class="dz-input" />
+            <div class="dz-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <strong>Move-out photo</strong>
+              <span>Click or drag &amp; drop</span>
             </div>
-            <div class="dz-title">Move-out photo</div>
-            <div class="dz-sub">Click or drag &amp; drop</div>
+            <img class="dz-preview hidden" id="prev-moveout" alt="" />
+            <button type="button" class="dz-clear hidden" id="clear-moveout">✕</button>
           </div>
+
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- ── Landlord Claims ─────────────────────────────────────────────── -->
-    <div class="card">
-      <div class="section-label">Landlord Claims</div>
-      <div class="claims-header">
-        <span></span><span>Item</span><span>Description</span><span>Amount (THB)</span><span></span>
-      </div>
-      <div id="claims-list"></div>
-      <button class="btn-add-claim" onclick="addClaim()">+ Add claim</button>
-    </div>
+      <!-- ── Claims ─────────────────────────────── -->
+      <section class="card">
+        <h2>Landlord claims</h2>
+        <div id="claims-list"></div>
+        <button type="button" id="add-claim-btn" class="btn-secondary">+ Add claim</button>
+      </section>
 
-    <!-- ── Additional Evidence (collapsible) ──────────────────────────── -->
-    <div class="card">
-      <div class="collapsible-header" id="evidence-toggle" onclick="toggleEvidence()">
-        <h3>Additional evidence &amp; context <span style="color:var(--gray-400);font-size:12px;font-weight:400">—</span></h3>
-        <span class="chevron">⌄</span>
-      </div>
-      <div class="collapsible-body open" id="evidence-body">
+      <!-- ── Extras (collapsed) ─────────────────── -->
+      <details class="card extras-card" id="extras-card">
+        <summary class="extras-summary">
+          <span>Additional evidence &amp; context</span>
+          <span class="extras-hint" id="extras-hint"></span>
+          <span class="toggle-chevron">›</span>
+        </summary>
 
-        <!-- Rental Contract -->
-        <div class="evidence-section">
-          <div class="section-label" style="margin-bottom:12px">Rental Contract</div>
-          <div class="contract-grid">
-            <div class="drop-zone pdf-drop" id="dz-pdf" onclick="document.getElementById('fi-pdf').click()">
-              <input type="file" id="fi-pdf" class="file-input" accept=".pdf,image/*"
-                     onchange="previewPDF(this)">
-              <div id="dz-pdf-inner">
-                <div class="dz-icon">
-                  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div class="extras-body">
+
+          <!-- Contract -->
+          <div class="extras-section">
+            <div class="extras-section-label">Rental contract</div>
+            <div class="contract-upload-row">
+              <div class="drop-zone drop-zone-doc" id="dz-contract">
+                <input type="file" id="contract_file" name="contract_file" accept=".pdf,image/*" class="dz-input" />
+                <div class="dz-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <strong>Upload PDF or image</strong>
+                  <span>auto-extracts text</span>
                 </div>
-                <div class="dz-title" style="font-size:13px">Upload PDF or image</div>
-                <div class="dz-sub">auto-extracts text</div>
+                <div class="dz-doc-name hidden" id="contract-name"></div>
+                <button type="button" class="dz-clear hidden" id="clear-contract">✕</button>
+              </div>
+              <div class="contract-text-wrap">
+                <div class="contract-extract-row">
+                  <label for="contract_clause">Relevant clause</label>
+                  <button type="button" id="extract-contract-btn" class="btn-extract hidden">Extract ↑</button>
+                </div>
+                <textarea id="contract_clause" name="contract_clause" rows="4"
+                          placeholder="Paste a clause, or upload above to auto-extract."></textarea>
               </div>
             </div>
-            <div>
-              <div class="field-group" style="margin-bottom:10px">
-                <label>Relevant clause</label>
-                <textarea id="contract-clause" rows="4" placeholder="Paste a clause, or upload above to auto-extract."></textarea>
+            <div class="contract-meta-grid">
+              <div class="field">
+                <label for="lease_start">Lease start</label>
+                <input type="date" id="lease_start" name="lease_start" />
+              </div>
+              <div class="field">
+                <label for="lease_end">Lease end</label>
+                <input type="date" id="lease_end" name="lease_end" />
+              </div>
+              <div class="field">
+                <label for="deposit_amount">Deposit paid (THB)</label>
+                <input type="number" id="deposit_amount" name="deposit_amount" min="0" step="0.01" placeholder="e.g. 10000" />
+              </div>
+              <div class="field">
+                <label for="monthly_rent">Monthly rent (THB)</label>
+                <input type="number" id="monthly_rent" name="monthly_rent" min="0" step="0.01" placeholder="e.g. 5000" />
               </div>
             </div>
           </div>
-          <div class="lease-fields">
-            <div class="field-group"><label>Lease start</label><input type="date" id="lease-start"></div>
-            <div class="field-group"><label>Lease end</label><input type="date" id="lease-end"></div>
-            <div class="field-group"><label>Deposit paid (THB)</label><input type="number" id="deposit" placeholder="e.g. 10000"></div>
-            <div class="field-group"><label>Monthly rent (THB)</label><input type="number" id="rent" placeholder="e.g. 5000"></div>
-          </div>
-        </div>
 
-        <!-- Conversation Screenshots -->
-        <div class="evidence-section">
-          <div class="section-label" style="margin-bottom:12px">Conversation Screenshots</div>
-          <div class="drop-zone" id="dz-screens" style="min-height:120px"
-               onclick="document.getElementById('fi-screens').click()">
-            <input type="file" id="fi-screens" class="file-input" accept="image/*" multiple
-                   onchange="previewScreenshots(this)">
-            <div id="dz-screens-inner">
-              <div class="dz-icon">
-                <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <!-- Conversation screenshots -->
+          <div class="extras-section">
+            <div class="extras-section-label">Conversation screenshots</div>
+            <div class="screenshot-dz" id="screenshot-dz">
+              <input type="file" id="screenshot-input" accept="image/*" multiple class="dz-input" />
+              <div class="screenshot-dz-placeholder" id="screenshot-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                <strong>LINE / WhatsApp / SMS screenshots</strong>
+                <span>Multiple files OK</span>
+                <button type="button" class="btn-secondary" id="screenshot-browse-btn">Browse</button>
               </div>
-              <div class="dz-title">LINE / WhatsApp / SMS screenshots</div>
-              <div class="dz-sub">Multiple files OK</div>
-              <button class="btn-add-claim" style="margin-top:8px" onclick="event.stopPropagation();document.getElementById('fi-screens').click()">Browse</button>
+              <div class="screenshot-grid" id="screenshot-grid"></div>
             </div>
           </div>
-        </div>
 
-        <!-- Written Promises -->
-        <div class="evidence-section">
-          <div class="section-label" style="margin-bottom:12px">Written Promises / Statements</div>
-          <div class="promises-grid">
-            <div>
-              <label style="display:block;font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:6px">Landlord said / promised</label>
-              <textarea class="promise-box" id="landlord-promises"
-                        placeholder='One per line.&#10;e.g. "I will return deposit in full if room is clean"'></textarea>
-            </div>
-            <div>
-              <label style="display:block;font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:6px">Tenant said / promised</label>
-              <textarea class="promise-box" id="tenant-promises"
-                        placeholder='One per line.&#10;e.g. "Wall scuff was already there at move-in"'></textarea>
+          <!-- Promises -->
+          <div class="extras-section">
+            <div class="extras-section-label">Written promises / statements</div>
+            <div class="two-col">
+              <div class="field">
+                <label for="manual_landlord_promises">Landlord said / promised</label>
+                <textarea id="manual_landlord_promises" name="manual_landlord_promises" rows="4"
+                          placeholder="One per line.&#10;e.g. &quot;I will return deposit in full if room is clean&quot;"></textarea>
+              </div>
+              <div class="field">
+                <label for="manual_tenant_promises">Tenant said / promised</label>
+                <textarea id="manual_tenant_promises" name="manual_tenant_promises" rows="4"
+                          placeholder="One per line.&#10;e.g. &quot;Wall scuff was already there at move-in&quot;"></textarea>
+              </div>
             </div>
           </div>
-        </div>
 
+        </div>
+      </details>
+
+      <!-- ── Submit ──────────────────────────────── -->
+      <div class="submit-row">
+        <button type="submit" id="submit-btn">Analyze dispute</button>
       </div>
+
+    </form>
+
+    <!-- Loading -->
+    <div id="loading" class="loading-block hidden">
+      <div class="spinner"></div>
+      <p id="loading-msg">Running analysis…</p>
     </div>
 
-    <!-- ── Run ────────────────────────────────────────────────────────── -->
-    <div class="run-section">
-      <button class="btn-run" id="btn-run" onclick="runPipeline()">Analyze</button>
-    </div>
+    <!-- Error -->
+    <div id="error-banner" class="error-banner hidden"></div>
 
-    <!-- ── Results ────────────────────────────────────────────────────── -->
-    <div id="results-section" style="display:none">
+    <!-- ── Results ────────────────────────────────── -->
+    <div id="results" class="hidden">
 
-      <div class="pipeline-bar" id="pip-bar">
-        <div class="pip-step" id="pip-01"><div class="pip-dot"></div>CV</div>
-        <div class="pip-arrow">—</div>
-        <div class="pip-step" id="pip-02"><div class="pip-dot"></div>Contract</div>
-        <div class="pip-arrow">—</div>
-        <div class="pip-step" id="pip-03"><div class="pip-dot"></div>Legal</div>
-        <div class="pip-arrow">—</div>
-        <div class="pip-step" id="pip-04"><div class="pip-dot"></div>Docs</div>
-      </div>
+      <!-- Evidence callout (shown if evidence was processed) -->
+      <div id="evidence-callout" class="hidden evidence-callout"></div>
 
-      <!-- Agent 01 -->
-      <div class="agent-card" id="card-01" style="display:none">
-        <div class="agent-card-header">
-          <div class="agent-num a01">01</div>
-          <div><h3>CV Damage Assessment</h3><p>Groq Llama-4-Scout</p></div>
-          <div class="agent-status" id="status-01"></div>
-        </div>
-        <div class="agent-body" id="body-01"></div>
-      </div>
+      <!-- CV summary bar (shown if photos were uploaded) -->
+      <div id="cv-summary-bar" class="hidden cv-summary-bar"></div>
 
-      <!-- Agent 02 -->
-      <div class="agent-card" id="card-02" style="display:none">
-        <div class="agent-card-header">
-          <div class="agent-num a02">02</div>
-          <div><h3>Contract Parser</h3><p>Typhoon v2 · PyMuPDF + Tesseract OCR</p></div>
-          <div class="agent-status" id="status-02"></div>
-        </div>
-        <div class="agent-body" id="body-02"></div>
-      </div>
-
-      <!-- Agent 03 -->
-      <div class="agent-card" id="card-03" style="display:none">
-        <div class="agent-card-header">
-          <div class="agent-num a03">03</div>
-          <div><h3>Legal Reasoning</h3><p>Typhoon v2 · ChromaDB RAG · OCPB 2568 + ป.พ.พ.</p></div>
-          <div class="agent-status" id="status-03"></div>
-        </div>
-        <div class="agent-body" id="body-03"></div>
-      </div>
-
-      <!-- Agent 04 -->
-      <div class="agent-card" id="card-04" style="display:none">
-        <div class="agent-card-header">
-          <div class="agent-num a04">04</div>
-          <div><h3>Document Generator</h3><p>Typhoon v2 · ReportLab · AWS S3</p></div>
-          <div class="agent-status" id="status-04"></div>
-        </div>
-        <div class="agent-body" id="body-04"></div>
-      </div>
+      <!-- Per-claim result cards -->
+      <div id="claim-results"></div>
 
     </div>
-  </div><!-- /page -->
+
+  </main>
 
   <script>
-    // ── Labels ────────────────────────────────────────────────────────────
-    const CV_LABEL = {
-      NORMAL_WEAR:  'Normal wear & tear',
-      PRE_EXISTING: 'Pre-existing damage',
-      UNCHANGED:    'No change detected',
-      NEW_DAMAGE:   'New damage',
-    };
-    const VERDICT_LABEL = {
-      LAWFUL:   'Lawful',
-      DISPUTED: 'Disputed',
-      UNLAWFUL: 'Unlawful',
-    };
+  // ── Corpus health ────────────────────────────────────
+  fetch('/health').then(r=>r.json()).then(d=>{
+    const p = document.getElementById('corpus-status');
+    p.textContent = d.corpus_loaded ? '✓ Corpus ready' : '✗ Corpus missing';
+    p.className = 'corpus-pill ' + (d.corpus_loaded ? 'corpus-ok' : 'corpus-err');
+  }).catch(()=>{ document.getElementById('corpus-status').textContent='? offline'; });
 
-    // ── State ─────────────────────────────────────────────────────────────
-    let photos = { movein: null, moveout: null };
-    let pdfFileName = null;
-    let screenshotCount = 0;
-    let claimCount = 0;
-
-    // ── Photos ────────────────────────────────────────────────────────────
-    function previewPhoto(input, dzId, side) {
-      if (!input.files[0]) return;
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = e => {
-        photos[side] = e.target.result;
-        const dz = document.getElementById(dzId);
-        dz.classList.add('filled');
-        dz.querySelector('div').innerHTML =
-          `<img src="${e.target.result}" class="preview-img" />` +
-          `<div class="preview-label">${file.name}</div>`;
+  // ── Drop-zone image (single) ─────────────────────────
+  function initImgDropZone(dzId, inputId, previewId, clearId) {
+    const dz=document.getElementById(dzId), input=document.getElementById(inputId),
+          preview=document.getElementById(previewId), clearBtn=document.getElementById(clearId);
+    function show(file){
+      if(!file||!file.type.startsWith('image/'))return;
+      const r=new FileReader();
+      r.onload=e=>{
+        preview.src=e.target.result; preview.classList.remove('hidden');
+        dz.querySelector('.dz-placeholder').classList.add('hidden');
+        clearBtn.classList.remove('hidden'); dz.classList.add('dz-has-file');
       };
-      reader.readAsDataURL(file);
+      r.readAsDataURL(file);
     }
+    function clear(){
+      input.value=''; preview.src=''; preview.classList.add('hidden');
+      dz.querySelector('.dz-placeholder').classList.remove('hidden');
+      clearBtn.classList.add('hidden'); dz.classList.remove('dz-has-file');
+    }
+    dz.addEventListener('click',e=>{ if(e.target===clearBtn)return; input.click(); });
+    input.addEventListener('change',()=>{ if(input.files[0])show(input.files[0]); });
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dz-drag');});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('dz-drag'));
+    dz.addEventListener('drop',e=>{
+      e.preventDefault(); dz.classList.remove('dz-drag');
+      const f=e.dataTransfer.files[0];
+      if(f){const dt=new DataTransfer();dt.items.add(f);input.files=dt.files;show(f);}
+    });
+    clearBtn.addEventListener('click',e=>{e.stopPropagation();clear();});
+  }
+  initImgDropZone('dz-movein','move_in_image','prev-movein','clear-movein');
+  initImgDropZone('dz-moveout','move_out_image','prev-moveout','clear-moveout');
 
-    function previewPDF(input) {
-      if (!input.files[0]) return;
-      pdfFileName = input.files[0].name;
-      const dz = document.getElementById('dz-pdf');
-      dz.classList.add('filled');
-      document.getElementById('dz-pdf-inner').innerHTML =
-        `<div class="dz-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>` +
-        `<div class="dz-title" style="font-size:13px">${pdfFileName}</div>` +
-        `<div class="dz-sub" style="color:var(--green)">✓ Ready</div>`;
+  // ── Contract drop-zone ───────────────────────────────
+  (function(){
+    const dz=document.getElementById('dz-contract'), input=document.getElementById('contract_file'),
+          nameEl=document.getElementById('contract-name'), clearBtn=document.getElementById('clear-contract'),
+          extractBtn=document.getElementById('extract-contract-btn');
+    function setFile(file){
+      nameEl.textContent='📄 '+file.name; nameEl.classList.remove('hidden');
+      dz.querySelector('.dz-placeholder').classList.add('hidden');
+      clearBtn.classList.remove('hidden'); extractBtn.classList.remove('hidden');
+      dz.classList.add('dz-has-file');
+      updateExtrasHint();
     }
+    function clearZone(){
+      input.value=''; nameEl.textContent=''; nameEl.classList.add('hidden');
+      dz.querySelector('.dz-placeholder').classList.remove('hidden');
+      clearBtn.classList.add('hidden'); extractBtn.classList.add('hidden');
+      dz.classList.remove('dz-has-file'); updateExtrasHint();
+    }
+    dz.addEventListener('click',e=>{ if(e.target===clearBtn||e.target===extractBtn)return; input.click(); });
+    input.addEventListener('change',()=>{ if(input.files[0])setFile(input.files[0]); });
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dz-drag');});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('dz-drag'));
+    dz.addEventListener('drop',e=>{
+      e.preventDefault(); dz.classList.remove('dz-drag');
+      const f=e.dataTransfer.files[0];
+      if(f){const dt=new DataTransfer();dt.items.add(f);input.files=dt.files;setFile(f);}
+    });
+    clearBtn.addEventListener('click',e=>{e.stopPropagation();clearZone();});
+    extractBtn.addEventListener('click',async e=>{
+      e.stopPropagation();
+      if(!input.files[0])return;
+      extractBtn.textContent='Extracting…'; extractBtn.disabled=true;
+      try{
+        const fd=new FormData(); fd.append('contract_file',input.files[0]);
+        const resp=await fetch('/extract-contract',{method:'POST',body:fd});
+        const data=await resp.json();
+        if(data.error)throw new Error(data.error);
+        document.getElementById('contract_clause').value=data.text;
+        extractBtn.textContent='✓ Done';
+      }catch(err){ extractBtn.textContent='Failed'; alert('Extraction error: '+err.message); }
+      finally{ extractBtn.disabled=false; setTimeout(()=>{ extractBtn.textContent='Extract ↑'; },3000); }
+    });
+  })();
 
-    function previewScreenshots(input) {
-      screenshotCount = input.files.length;
-      if (!screenshotCount) return;
-      document.getElementById('dz-screens-inner').innerHTML =
-        `<div class="dz-title">✓ ${screenshotCount} screenshot${screenshotCount > 1 ? 's' : ''} selected</div>` +
-        `<div class="dz-sub" style="color:var(--green)">Ready to analyze</div>`;
-      document.getElementById('dz-screens').classList.add('filled');
-    }
-
-    // ── Claims ────────────────────────────────────────────────────────────
-    function addClaim() {
-      claimCount++;
-      const n = claimCount;
-      const div = document.createElement('div');
-      div.className = 'claim-row';
-      div.id = 'claim-' + n;
-      div.innerHTML =
-        `<div class="claim-num">${n}</div>` +
-        `<input type="text" placeholder="e.g. bedroom wall" id="item-${n}">` +
-        `<input type="text" placeholder="Describe the damage" id="desc-${n}">` +
-        `<input type="number" placeholder="0" id="amt-${n}" min="0">` +
-        `<button class="btn-remove" onclick="removeClaim(${n})" title="Remove">×</button>`;
-      document.getElementById('claims-list').appendChild(div);
-    }
-
-    function removeClaim(n) {
-      const el = document.getElementById('claim-' + n);
-      if (el) el.remove();
-    }
-
-    // ── Collapsible ───────────────────────────────────────────────────────
-    function toggleEvidence() {
-      const toggle = document.getElementById('evidence-toggle');
-      const body   = document.getElementById('evidence-body');
-      toggle.classList.toggle('open');
-      body.classList.toggle('open');
-    }
-    // Open by default
-    document.getElementById('evidence-toggle').classList.add('open');
-
-    // ── Corpus status ─────────────────────────────────────────────────────
-    fetch('/health').then(r => r.json()).then(d => {
-      const badge = document.getElementById('corpus-badge');
-      if (d.corpus_loaded) {
-        badge.className = 'corpus-badge ok';
-        badge.innerHTML = '<div class="corpus-dot"></div><span>Corpus ready</span>';
-      }
-    }).catch(() => {});
-
-    // ── Helpers ───────────────────────────────────────────────────────────
-    function pipState(n, state) {
-      document.getElementById('pip-0' + n).className = 'pip-step ' + state;
-    }
-    function setStatus(n, html) {
-      document.getElementById('status-0' + n).innerHTML = html;
-    }
-    function showCard(n) {
-      const card = document.getElementById('card-0' + n);
-      card.style.display = 'block';
-      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-    }
-    function spinner() {
-      return '<span class="spinner-sm"></span>Analyzing…';
-    }
-
-    async function fetchAgent(path, body) {
-      const opts = body
-        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-        : {};
-      const r = await fetch(path, opts);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }
-
-    // ── Read claims from form ─────────────────────────────────────────────
-    function getFormClaims() {
-      const rows = document.querySelectorAll('#claims-list .claim-row');
-      const claims = [];
-      rows.forEach((row, i) => {
-        const n = row.id.replace('claim-', '');
-        const item = (document.getElementById('item-' + n)?.value || '').trim();
-        const desc = (document.getElementById('desc-' + n)?.value || '').trim();
-        const amt  = parseFloat(document.getElementById('amt-' + n)?.value || 0);
-        if (item) claims.push({ claim_id: 'C' + String(i+1).padStart(3,'0'), item, description: desc, amount_thb: amt });
+  // ── Screenshot multi-upload ──────────────────────────
+  (function(){
+    const dz=document.getElementById('screenshot-dz'), input=document.getElementById('screenshot-input'),
+          grid=document.getElementById('screenshot-grid'), ph=document.getElementById('screenshot-placeholder'),
+          browseBtn=document.getElementById('screenshot-browse-btn');
+    let files=[];
+    browseBtn.addEventListener('click',e=>{e.stopPropagation();input.click();});
+    dz.addEventListener('click',e=>{ if(browseBtn.contains(e.target)||grid.contains(e.target))return; input.click(); });
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dz-drag');});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('dz-drag'));
+    dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dz-drag');addFiles(Array.from(e.dataTransfer.files));});
+    input.addEventListener('change',()=>{addFiles(Array.from(input.files));input.value='';});
+    function addFiles(newFiles){
+      newFiles.filter(f=>f.type.startsWith('image/')).forEach(f=>{
+        const idx=files.length; files.push(f);
+        const r=new FileReader();
+        r.onload=e=>{
+          const t=document.createElement('div'); t.className='screenshot-thumb'; t.dataset.idx=idx;
+          t.innerHTML=`<img src="${e.target.result}" alt="${esc(f.name)}"/><div class="thumb-name">${esc(f.name)}</div><button type="button" class="thumb-remove" title="Remove">✕</button>`;
+          t.querySelector('.thumb-remove').addEventListener('click',ev=>{ev.stopPropagation();files[idx]=null;t.remove();updatePh();updateExtrasHint();});
+          grid.appendChild(t);
+        };
+        r.readAsDataURL(f);
       });
-      return claims;
+      updatePh(); updateExtrasHint();
+    }
+    function updatePh(){ ph.style.display=files.filter(Boolean).length?'none':'flex'; }
+    window._getScreenshots=()=>files.filter(Boolean);
+  })();
+
+  // ── Extras hint (badge showing what's filled) ────────
+  function updateExtrasHint(){
+    const parts=[];
+    if(document.getElementById('contract_file').files.length||document.getElementById('contract_clause').value.trim())
+      parts.push('contract');
+    if(window._getScreenshots().length) parts.push(window._getScreenshots().length+' screenshot'+(window._getScreenshots().length>1?'s':''));
+    if(document.getElementById('manual_landlord_promises').value.trim()||document.getElementById('manual_tenant_promises').value.trim())
+      parts.push('promises');
+    const hint=document.getElementById('extras-hint');
+    hint.textContent=parts.length?parts.join(' · '):'';
+  }
+  ['contract_clause','manual_landlord_promises','manual_tenant_promises'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',updateExtrasHint);
+  });
+
+  // ── Claims ───────────────────────────────────────────
+  let claimCount=0;
+  function addClaimRow(item='',description='',amount=''){
+    claimCount++;
+    const list=document.getElementById('claims-list');
+    const row=document.createElement('div'); row.className='claim-row';
+    row.innerHTML=`
+      <div class="claim-num">${claimCount}</div>
+      <div class="claim-fields">
+        <div class="field"><label>Item</label><input type="text" class="claim-item" placeholder="e.g. bedroom wall" value="${esc(item)}" /></div>
+        <div class="field claim-desc-field"><label>Description</label><input type="text" class="claim-description" placeholder="Describe the damage" value="${esc(description)}" /></div>
+        <div class="field claim-amount-field"><label>Amount (THB)</label><input type="number" class="claim-amount" min="0" step="0.01" placeholder="0" value="${amount}" /></div>
+      </div>
+      <button type="button" class="btn-remove" title="Remove">✕</button>`;
+    row.querySelector('.btn-remove').addEventListener('click',()=>row.remove());
+    list.appendChild(row);
+  }
+  addClaimRow();
+  document.getElementById('add-claim-btn').addEventListener('click',()=>addClaimRow());
+
+  function getClaims(){
+    return Array.from(document.querySelectorAll('.claim-row')).map(r=>({
+      item:        r.querySelector('.claim-item').value.trim(),
+      description: r.querySelector('.claim-description').value.trim(),
+      amount_thb:  parseFloat(r.querySelector('.claim-amount').value)||0,
+    })).filter(c=>c.item||c.description);
+  }
+
+  // ── Main form submit ─────────────────────────────────
+  document.getElementById('main-form').addEventListener('submit', async e=>{
+    e.preventDefault();
+    document.getElementById('results').classList.add('hidden');
+    document.getElementById('error-banner').classList.add('hidden');
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('submit-btn').disabled=true;
+
+    const claims=getClaims();
+    if(!claims.length){
+      showError('Add at least one claim.');
+      return;
     }
 
-    // ── Pipeline ──────────────────────────────────────────────────────────
-    async function runPipeline() {
-      const btn = document.getElementById('btn-run');
-      btn.disabled = true;
-      btn.textContent = 'Running…';
+    // Progressive loading messages
+    const msgs=['Running visual comparison…','Extracting conversation evidence…','Querying Thai legal corpus…','Almost done…'];
+    let mi=0;
+    const msgEl=document.getElementById('loading-msg');
+    const msgTimer=setInterval(()=>{ msgEl.textContent=msgs[Math.min(++mi,msgs.length-1)]; },3500);
 
-      const userClaims = getFormClaims();
-      if (userClaims.length === 0) {
-        alert('Please add at least one landlord claim before running.');
-        btn.disabled = false; btn.textContent = 'Analyze'; return;
-      }
+    try{
+      const fd=new FormData();
+      const moveIn=document.getElementById('move_in_image').files[0];
+      const moveOut=document.getElementById('move_out_image').files[0];
+      if(moveIn)  fd.append('move_in_image', moveIn);
+      if(moveOut) fd.append('move_out_image', moveOut);
+      window._getScreenshots().forEach(f=>fd.append('screenshots',f));
+      fd.append('claims', JSON.stringify(claims));
+      fd.append('contract_clause',          document.getElementById('contract_clause').value);
+      fd.append('manual_landlord_promises', document.getElementById('manual_landlord_promises').value);
+      fd.append('manual_tenant_promises',   document.getElementById('manual_tenant_promises').value);
 
-      document.getElementById('results-section').style.display = 'block';
-      document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+      const resp=await fetch('/full-analysis',{method:'POST',body:fd});
+      const data=await resp.json();
+      if(!resp.ok||data.error) throw new Error(data.error||resp.statusText);
+      renderResults(data);
+    }catch(err){
+      showError(err.message);
+    }finally{
+      clearInterval(msgTimer);
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('submit-btn').disabled=false;
+    }
+  });
 
-      // ── Agent 01 ───────────────────────────────────────────────────────
-      pipState(1, 'active'); showCard(1); setStatus(1, spinner());
-      const d1 = await fetchAgent('/mock/agent01', { claims: userClaims });
-      setStatus(1, '<span class="ok">✓ Done</span>'); pipState(1, 'done');
+  function showError(msg){
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('submit-btn').disabled=false;
+    const b=document.getElementById('error-banner');
+    b.textContent='⚠ '+msg; b.classList.remove('hidden');
+  }
 
-      document.getElementById('body-01').innerHTML = d1.damage_map.map((r, i) => {
-        const claim = userClaims[i] || {};
-        return `
-        <div class="cv-row">
-          <div class="cv-photos">
-            <div class="cv-photo-wrap">
-              <div class="cv-photo-label">Move-in</div>
-              ${photos.movein
-                ? `<img src="${photos.movein}" class="cv-photo" />`
-                : `<div class="cv-photo-empty">No photo</div>`}
-            </div>
-            <div class="cv-photos-arrow">→</div>
-            <div class="cv-photo-wrap">
-              <div class="cv-photo-label">Move-out</div>
-              ${photos.moveout
-                ? `<img src="${photos.moveout}" class="cv-photo" />`
-                : `<div class="cv-photo-empty">No photo</div>`}
-            </div>
+  // ── Render results ───────────────────────────────────
+  function renderResults(data){
+    // Evidence callout
+    const evCallout=document.getElementById('evidence-callout');
+    const ev=data.evidence_summary;
+    if(ev&&(ev.landlord_promises.length||ev.tenant_promises.length||ev.deposit_mentions.length)){
+      const total=ev.landlord_promises.length+ev.tenant_promises.length;
+      evCallout.innerHTML=`
+        <div class="ev-callout-icon">💬</div>
+        <div>
+          <strong>${total} statement${total!==1?'s':''} extracted</strong> from conversation evidence
+          ${ev.platforms.length?'· '+ev.platforms.join(', '):''}
+          <div class="ev-callout-pills">
+            ${ev.landlord_promises.map(p=>`<span class="ev-pill ev-pill-landlord">${esc(p)}</span>`).join('')}
+            ${ev.tenant_promises.map(p=>`<span class="ev-pill ev-pill-tenant">${esc(p)}</span>`).join('')}
+            ${ev.deposit_mentions.map(p=>`<span class="ev-pill ev-pill-deposit">${esc(p)}</span>`).join('')}
           </div>
-          <div class="cv-info">
-            <div class="cv-info-header">
-              ${claim.item ? `<strong style="font-size:13px">${claim.item}</strong>` : ''}
-              <span class="badge badge-${(r.verdict||'none').toLowerCase()}">${r.verdict ? CV_LABEL[r.verdict]||r.verdict : 'Unverifiable'}</span>
-              <span class="badge badge-conf">Confidence ${(r.confidence*100).toFixed(0)}%</span>
-            </div>
-            ${claim.description ? `<div style="font-size:12px;color:var(--gray-400);margin-bottom:6px">${claim.description}</div>` : ''}
-            <div class="cv-condition">
-              <span>Move-in:</span> ${r.move_in_condition}<br>
-              <span>Move-out:</span> ${r.move_out_condition}
-            </div>
-            ${r.status === 'unverifiable_by_cv'
-              ? '<div class="unverifiable-note">⚠ Image quality too low — Agent 03 will reason from contract + law only</div>'
-              : ''}
-          </div>
         </div>`;
-      }).join('');
-
-      // ── Agent 02 ───────────────────────────────────────────────────────
-      pipState(2, 'active'); showCard(2); setStatus(2, spinner());
-      const leaseData = {
-        claims:      userClaims,
-        lease_start: document.getElementById('lease-start')?.value || '',
-        lease_end:   document.getElementById('lease-end')?.value || '',
-        deposit:     parseFloat(document.getElementById('deposit')?.value || 0),
-        rent:        parseFloat(document.getElementById('rent')?.value || 0),
-        clause:      document.getElementById('contract-clause')?.value || '',
-      };
-      const d2 = await fetchAgent('/mock/agent02', leaseData);
-      setStatus(2, '<span class="ok">✓ Done</span>'); pipState(2, 'done');
-
-      const cs = d2.contract_summary;
-      document.getElementById('body-02').innerHTML = `
-        ${pdfFileName ? `<div class="parsed-from">Parsed from: <strong>${pdfFileName}</strong></div>` : ''}
-        <div class="info-grid">
-          <div class="info-box"><label>Deposit</label><span>฿${cs.deposit_amount_thb.toLocaleString()}</span></div>
-          <div class="info-box"><label>Period</label><span>${cs.lease_start} → ${cs.lease_end}</span></div>
-          <div class="info-box"><label>Notice</label><span>${cs.notice_period_days} days</span></div>
-          <div class="info-box"><label>OCR</label><span>${d2.ocr_used ? 'Used' : 'Not needed'}</span></div>
-        </div>
-        ${d2.unfair_clauses.length ? `
-        <div class="unfair-banner">
-          <h4>⚠ Void clauses found (${d2.unfair_clauses.length})</h4>
-          ${d2.unfair_clauses.map(u => `<p>"${u.clause_text}"</p><small>${u.reason_void}</small>`).join('')}
-        </div>` : ''}
-        <div class="liability-rows">
-          ${d2.liability_map.map(l => `
-          <div class="liability-row">
-            <span class="badge ${l.tenant_liable ? 'badge-unlawful' : 'badge-lawful'}">${l.tenant_liable ? 'Tenant liable' : 'Not liable'}</span>
-            <div>
-              <div class="liability-text">${l.notes}</div>
-              ${l.contract_clause ? `<div class="liability-clause">"${l.contract_clause}"</div>` : ''}
-            </div>
-          </div>`).join('')}
-        </div>`;
-
-      // ── Agent 03 ───────────────────────────────────────────────────────
-      pipState(3, 'active'); showCard(3); setStatus(3, spinner());
-      const d3 = await fetchAgent('/mock/agent03', { claims: userClaims });
-      setStatus(3, '<span class="ok">✓ Done</span>'); pipState(3, 'done');
-
-      const pct = Math.round(d3.total_unlawful_thb / d3.total_claimed_thb * 100);
-      document.getElementById('body-03').innerHTML = `
-        <div class="totals-bar">
-          <div class="total-box t-claimed"><label>Total claimed</label><span>฿${d3.total_claimed_thb.toLocaleString()}</span></div>
-          <div class="total-box t-unlawful"><label>Unlawful (${pct}%)</label><span>฿${d3.total_unlawful_thb.toLocaleString()}</span></div>
-          <div class="total-box t-route"><label>Route</label><span>${d3.routing}</span></div>
-        </div>
-        <div class="verdict-rows">
-          ${d3.verdicts.map(v => `
-          <div class="verdict-row v-${v.verdict.toLowerCase()}">
-            <div class="verdict-row-header">
-              <strong>${v.item}</strong>
-              <span class="badge badge-${v.verdict.toLowerCase()}">${VERDICT_LABEL[v.verdict]||v.verdict}</span>
-              <span class="verdict-amount">฿${v.amount_thb.toLocaleString()}</span>
-            </div>
-            <div class="verdict-reasoning">${v.reasoning_th}</div>
-            <div class="verdict-cites">${v.citations.map(c => `<span class="cite">${c}</span>`).join('')}</div>
-            <div class="verdict-action">💡 ${v.recommended_action_th}</div>
-          </div>`).join('')}
-        </div>
-        <div class="case-summary">
-          <h4>Case Summary</h4>
-          <p>${d3.case_summary_th}</p>
-          <p class="en">${d3.case_summary_en}</p>
-        </div>`;
-
-      // ── Agent 04 ───────────────────────────────────────────────────────
-      pipState(4, 'active'); showCard(4); setStatus(4, spinner());
-      const d4 = await fetchAgent('/mock/agent04');
-      setStatus(4, '<span class="ok">✓ Done</span>'); pipState(4, 'done');
-
-      document.getElementById('body-04').innerHTML = `
-        <div class="docs-grid">
-          ${Object.entries(d4.documents).map(([k, doc]) => `
-          <div class="doc-card">
-            <div class="doc-icon">📄</div>
-            <strong>${doc.doc_type}</strong>
-            <span>${doc.pages} pages</span>
-            <button class="btn-dl" onclick="alert('Demo mode — PDFs upload to S3 with real AWS credentials')">Download</button>
-          </div>`).join('')}
-        </div>
-        <div class="gen-meta">Generated in ${d4.generation_time_seconds}s · Recoverable: <strong>฿${d4.total_unlawful_amount_thb.toLocaleString()}</strong></div>`;
-
-      btn.textContent = '✓ Done';
+      evCallout.classList.remove('hidden');
+    } else {
+      evCallout.classList.add('hidden');
     }
 
-    // Init: add first claim row
-    addClaim();
+    // CV summary bar
+    const cvBar=document.getElementById('cv-summary-bar');
+    const cvs=data.cv_summary;
+    if(cvs){
+      cvBar.innerHTML=`
+        <span class="cv-bar-label">📷 Photo analysis</span>
+        <span class="cv-bar-stat">${cvs.total_claims} claim${cvs.total_claims!==1?'s':''}</span>
+        <span class="cv-bar-chip cv-bar-chip-yes">${cvs.supported_claims} supported</span>
+        <span class="cv-bar-chip cv-bar-chip-no">${cvs.disputed_claims} disputed</span>
+        <span class="cv-bar-chip cv-bar-chip-partial">${cvs.partial_claims} partial</span>
+        ${cvs.total_disputed_amount>0
+          ? `<span class="cv-bar-amount">฿${cvs.total_disputed_amount.toLocaleString()} in dispute</span>`:''}`;
+      cvBar.classList.remove('hidden');
+    } else {
+      cvBar.classList.add('hidden');
+    }
+
+    // Per-claim cards
+    const container=document.getElementById('claim-results');
+    container.innerHTML='';
+    (data.claims||[]).forEach((c,i)=>{
+      const legal=c.legal||{}, cv=c.cv||{}, claim=c.claim||{};
+      const lClass=legalClass(legal.classification);
+      const cvVerdict=(cv.supports_landlord_claim||'').toUpperCase();
+      const cvCls=cvVerdict==='YES'?'cv-badge-yes':cvVerdict==='NO'?'cv-badge-no':'cv-badge-partial';
+      const confPct=Math.round((legal.confidence||0)*100);
+      const cvConf=Math.round((cv.confidence||0)*100);
+
+      const card=document.createElement('section');
+      card.className='card claim-result-card';
+      card.innerHTML=`
+        <div class="crc-header">
+          <div class="crc-title">
+            <span class="crc-num">${i+1}</span>
+            <span class="crc-item">${esc(claim.item||'Claim '+(i+1))}</span>
+            <span class="crc-amount">฿${(claim.amount_thb||0).toLocaleString()}</span>
+          </div>
+          <div class="crc-badges">
+            ${cvVerdict?`<span class="cv-badge ${cvCls}" title="Photo evidence">${cvVerdict}</span>`:''}
+            <span class="badge badge-${(legal.classification||'unknown').toLowerCase()}">${legal.classification||'—'}</span>
+          </div>
+        </div>
+
+        ${cv.move_in_condition||cv.move_out_condition?`
+        <div class="crc-conditions">
+          <div class="crc-cond"><span class="crc-cond-label">Move-in</span><p>${esc(cv.move_in_condition||'—')}</p></div>
+          <div class="crc-cond"><span class="crc-cond-label">Move-out</span><p>${esc(cv.move_out_condition||'—')}</p></div>
+        </div>`:''}
+
+        <div class="crc-tags">
+          ${cv.wear_and_tear?'<span class="tag tag-wear">Wear &amp; Tear</span>':''}
+          ${cv.likely_tenant_caused===false?'<span class="tag tag-nottenant">Not tenant-caused</span>':''}
+          ${cv.low_visibility?'<span class="tag tag-lowvis">Low visibility</span>':''}
+        </div>
+
+        <div class="crc-meta-row">
+          <span class="crc-conf-wrap">
+            <span class="conf-bar-track"><span class="conf-bar-fill" style="width:${confPct}%;background:${legalColor(legal.classification)}"></span></span>
+            <span class="conf-label">Legal ${confPct}%</span>
+          </span>
+          ${cvVerdict?`<span class="crc-conf-wrap"><span class="conf-bar-track"><span class="conf-bar-fill" style="width:${cvConf}%;background:#4a90d9"></span></span><span class="conf-label">Photo ${cvConf}%</span></span>`:''}
+        </div>
+
+        ${(legal.dimensions&&Object.keys(legal.dimensions).length)?`
+        <div class="crc-dims">
+          ${Object.entries({pre_existence:'Pre-existence',wear_and_tear:'Wear &amp; Tear',proportionality:'Proportionality',contractual_clarity:'Contract'}).map(([k,l])=>
+            legal.dimensions[k]?`<div class="crc-dim"><span class="crc-dim-label">${l}</span><span>${esc(legal.dimensions[k])}</span></div>`:''
+          ).join('')}
+        </div>`:''}
+
+        ${legal.legal_basis&&legal.legal_basis.length?`
+        <details class="crc-legal-details">
+          <summary>Legal basis (${legal.legal_basis.length} section${legal.legal_basis.length!==1?'s':''})</summary>
+          <div class="crc-legal-list">
+            ${legal.legal_basis.map(b=>`
+              <div class="crc-legal-row">
+                <span class="crc-legal-src">${esc(b.source||'')} ${esc(b.section||'')}</span>
+                <span class="crc-legal-excerpt">${esc(b.excerpt||'')}</span>
+                <span class="crc-legal-favor ${(b.favors||'').toLowerCase()==='tenant'?'favor-tenant':'favor-landlord'}">${esc(b.favors||'')}</span>
+              </div>`).join('')}
+          </div>
+        </details>`:''}
+
+        ${legal.summary_th?`<p class="crc-summary-th">${esc(legal.summary_th)}</p>`:''}
+      `;
+      container.appendChild(card);
+    });
+
+    document.getElementById('results').classList.remove('hidden');
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function legalClass(c){ return (c||'unknown').toLowerCase(); }
+  function legalColor(c){
+    if(!c)return'#aaa';
+    const m={'lawful':'#1a7a4a','disputed':'#b85c00','unlawful':'#c0392b'};
+    return m[c.toLowerCase()]||'#aaa';
+  }
+
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
   </script>
 </body>
 </html>
