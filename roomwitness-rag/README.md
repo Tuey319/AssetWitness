@@ -1,94 +1,193 @@
-# RoomWitness RAG — Thai Rental Deposit Legal Classifier
+# RoomWitness — AI Pipeline for Thai Rental Deposit Disputes
 
-Classifies landlord deposit deduction claims against Thai law (CCC §537-571 and the OCPB 2025 rental notification) using a retrieval-augmented GPT-4o pipeline.
+RoomWitness helps Bangkok renters dispute unfair security deposit deductions.
+It takes move-in/out photos, a lease contract, and the landlord's damage claim,
+then produces three ready-to-file Thai legal documents via a 4-agent AI pipeline.
 
----
+## Pipeline Overview
+
+```
+[Photos + Screenshots]        [Lease PDF]
+         │                         │
+         ▼                         ▼
+   Agent 01 (CV)           Agent 02 (Parser)
+   Groq Llama-4-Scout      Typhoon v2 + OCR
+   damage_map[]            liability_map[]
+         │                         │
+         └──────────┬──────────────┘
+                    ▼
+           Agent 03 (Legal Brain)
+           Hard rules + RAG + Typhoon v2
+           verdicts[] + routing
+                    │
+                    ▼
+           Agent 04 (Doc Generator)
+           Typhoon v2 + ReportLab
+           3 Thai PDFs → S3
+```
+
+| Agent | Role | Port | LLM |
+|-------|------|------|-----|
+| **Agent 01** | CV — compare move-in vs move-out photos + read chat screenshots | 8001 | Groq Llama-4-Scout |
+| **Agent 02** | Contract Parser — extract lease terms, liability map, void clauses | 8002 | Typhoon v2 |
+| **Agent 03** | Legal Reasoning — hard rules + RAG + per-claim verdicts + routing | 8003 | Typhoon v2 |
+| **Agent 04** | Document Generator — render 3 Thai legal PDFs, upload to S3 | 8004 | Typhoon v2 |
+
+## Team
+
+- **KP** — Lead
+- **Beam** — Frontend
+- **Tuey** — Tech Lead
+
+## Repository Structure
+
+```
+RoomWitness/                      # repo root
+├── nextjs-frontend/              # React UI — Next.js 14, TypeScript
+├── express-backend/              # API proxy server — Express.js
+└── roomwitness-rag/              # Python AI microservices
+    ├── services/                 # Bridge services for demo (ports 8001–8004)
+    │   ├── agent01_service.py    # CV assessment (Groq)
+    │   ├── agent02_service.py    # Contract parser (mock)
+    │   ├── agent03_service.py    # Legal reasoning (Groq + ChromaDB)
+    │   └── agent04_service.py    # Document generator (mock)
+    ├── agent01_cv/               # Vision agent — Groq Llama-4-Scout
+    │   ├── cv.py                 # Photo comparison logic
+    │   ├── evidence.py           # Conversation screenshot extraction (LINE/WhatsApp)
+    │   ├── models.py             # CVResult schema + translate_to_cv_result()
+    │   └── main.py               # Production FastAPI app (POST /api/v1/agent01)
+    ├── agent02_contract_parser/  # Lease contract PDF parser — Typhoon v2
+    ├── agent03_legal_reasoning/  # Legal brain — RAG + hard rules + Typhoon v2
+    │   └── legal_corpus/         # OCPB 2568 + CCC §537-571 JSON chunks
+    ├── agent04_doc_generator/    # PDF renderer — ReportLab + Typhoon v2
+    │   ├── templates/            # Document structure definitions
+    │   └── fonts/                # Place Sarabun .ttf files here
+    ├── shared/                   # Shared utilities (config, typhoon_client, s3_client)
+    ├── legacy/                   # Pre-hackathon Groq prototype (rag_agent.py)
+    ├── portal/                   # Original Flask portal (reference only)
+    ├── chroma_db/                # ChromaDB vector store (auto-created by seed_corpus.py)
+    └── .env.example              # Copy to .env and fill in credentials
+```
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for full dev setup and code conventions.
+
+## Prerequisites
+
+- Python 3.11+
+- Tesseract OCR with Thai language pack (required by Agent 02):
+  - Ubuntu/Debian: `sudo apt-get install tesseract-ocr tesseract-ocr-tha`
+  - macOS: `brew install tesseract tesseract-lang`
+  - Windows: https://github.com/UB-Mannheim/tesseract/wiki
+- AWS S3 bucket (`roomwitness-cases` by default)
+- Groq API key (free) — register at https://console.groq.com
+- Typhoon v2 API key — register at https://typhoon.apps.opentyphoon.ai (**do this now**)
 
 ## Setup
 
 ```bash
-cd roomwitness-rag
-pip install -r requirements.txt
-
+# 1. Copy environment file and fill in credentials
 cp .env.example .env
-# Edit .env and set OPENAI_API_KEY=sk-...
+# Required: GROQ_API_KEY, TYPHOON_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+# 2. Install dependencies for each agent
+pip install -r agent01_cv/requirements.txt
+pip install -r agent02_contract_parser/requirements.txt
+pip install -r agent03_legal_reasoning/requirements.txt
+pip install -r agent04_doc_generator/requirements.txt
 ```
 
----
-
-## Build the corpus
+## Seed RAG Corpus (run ONCE before starting Agent 03)
 
 ```bash
-python build_corpus.py
+python agent03_legal_reasoning/seed_corpus.py
 ```
 
-This will:
-1. Scrape CCC §537–571 from krisdika.go.th → `corpus/raw/ccc_NNN.txt`
-2. Download and extract the OCPB 2025 PDF → `corpus/raw/ocpb_2025.txt`
-3. Chunk all text → `corpus/chunks/all_chunks.json`
-4. Embed with `text-embedding-3-small` and store in ChromaDB at `./chroma_db`
+Loads OCPB 2568 and Civil Code §537-571 into ChromaDB. Run again only if you update `legal_corpus/*.json`.
 
-If the corpus already exists in ChromaDB, the embedding step is skipped automatically.
+## Thai Font Setup for Agent 04 (REQUIRED before generating PDFs)
 
----
+1. Download Sarabun from https://fonts.google.com/specimen/Sarabun
+2. Place these two files in `agent04_doc_generator/fonts/`:
+   - `Sarabun-Regular.ttf`
+   - `Sarabun-Bold.ttf`
 
-## If the OCPB PDF must be downloaded manually
+Without them, ReportLab falls back to Helvetica — Thai characters will not render.
 
-If `scrape_ocpb.py` cannot download the file automatically, it will print instructions. In short:
+## Run All Agents
 
-1. Open [https://ratchakitcha.soc.go.th](https://ratchakitcha.soc.go.th)
-2. Search for: `ประกาศคณะกรรมการว่าด้วยสัญญา เรื่อง ให้ธุรกิจการให้เช่าอาคาร`
-3. Find the notification dated **4 September 2025 (2568 BE)**
-4. Download the PDF and save it as: `corpus/raw/ocpb_2025.pdf`
-5. Re-run: `python build_corpus.py`
+### Option A — Bridge services (recommended for demo)
 
----
-
-## Start the portal
+The bridge services accept the same HTTP format as the frontend and run the working
+Flask portal logic. Start them from `roomwitness-rag/`:
 
 ```bash
-flask --app portal/app.py run
+uvicorn services.agent01_service:app --port 8001 --reload
+uvicorn services.agent02_service:app --port 8002 --reload
+uvicorn services.agent03_service:app --port 8003 --reload
+uvicorn services.agent04_service:app --port 8004 --reload
 ```
 
-Then open [http://localhost:5000](http://localhost:5000).
-
----
-
-## Run the RAG agent test (no portal)
+### Option B — Production FastAPI agents (requires S3 + Typhoon v2)
 
 ```bash
-python rag_agent.py
+uvicorn agent01_cv.main:app --port 8001 --reload
+uvicorn agent02_contract_parser.main:app --port 8002 --reload
+uvicorn agent03_legal_reasoning.main:app --port 8003 --reload
+uvicorn agent04_doc_generator.main:app --port 8004 --reload
 ```
 
-Prints a JSON classification for a sample wall-paint damage claim.
+## API Endpoints
+
+| Method | Path | Agent | Description |
+|--------|------|-------|-------------|
+| POST | `/api/v1/agent01` | 01 | CV photo comparison + chat screenshot extraction → damage_map |
+| POST | `/api/v1/agent02` | 02 | Parse lease PDF → liability_map + contract_summary |
+| POST | `/api/v1/agent03` | 03 | Legal reasoning → verdicts + routing + case summary |
+| POST | `/api/v1/agent04` | 04 | Generate Thai legal PDFs → S3 presigned URLs |
+| GET  | `/health`         | all | `{"status":"ok","agent":"XX"}` |
+
+Interactive API docs available at `http://localhost:800X/docs` for each agent.
+
+## Demo Mode (no AWS for Agent 01 + 02)
+
+Pass local file paths instead of `s3://` URLs for images and the lease PDF:
+
+```json
+{ "movein_image_url": "/path/to/movein.jpg", "moveout_image_url": "/path/to/moveout.jpg" }
+{ "lease_contract_url": "/path/to/lease.pdf" }
+```
+
+Agent 04 still requires AWS credentials to upload output PDFs to S3.
+
+## Data Flow (call order)
+
+```
+POST /api/v1/agent01  →  damage_map[]
+POST /api/v1/agent02  →  liability_map[], contract_summary{}
+POST /api/v1/agent03  (receives damage_map + liability_map)  →  verdicts[], routing
+POST /api/v1/agent04  (receives verdicts + routing)  →  PDF download URLs
+```
+
+Agent 01 is optional — pass `damage_map: []` to Agent 03 to skip CV and let Typhoon reason from contract + law alone.
+
+## Full Stack: Run Everything
+
+```bash
+# Terminal 1-4: Python bridge services (from roomwitness-rag/)
+uvicorn services.agent01_service:app --port 8001 --reload
+uvicorn services.agent02_service:app --port 8002 --reload
+uvicorn services.agent03_service:app --port 8003 --reload
+uvicorn services.agent04_service:app --port 8004 --reload
+
+# Terminal 5: Express backend
+cd express-backend && npm run dev    # http://localhost:3001
+
+# Terminal 6: Next.js frontend
+cd nextjs-frontend && npm run dev    # http://localhost:3000
+```
 
 ---
 
-## Project structure
+## Legacy prototype
 
-```
-roomwitness-rag/
-├── scraper/
-│   ├── scrape_ccc.py       # CCC §537-571 scraper
-│   └── scrape_ocpb.py      # OCPB 2025 PDF downloader + extractor
-├── corpus/
-│   ├── raw/                # Scraped .txt files and PDF
-│   └── chunks/             # all_chunks.json
-├── build_corpus.py         # Runs scraping → chunking → embedding
-├── rag_agent.py            # Classification pipeline
-├── portal/
-│   ├── app.py              # Flask routes
-│   ├── templates/index.html
-│   └── static/style.css
-├── requirements.txt
-└── .env.example
-```
-
----
-
-## Environment variables
-
-| Variable | Description |
-|---|---|
-| `OPENAI_API_KEY` | Your OpenAI API key |
-| `CHROMA_PATH` | Path for ChromaDB persistence (default: `./chroma_db`) |
+`legacy/` contains the pre-hackathon Groq + Flask prototype (`rag_agent.py`, `build_corpus.py`, `portal/`, `scraper/`). Not deployed.

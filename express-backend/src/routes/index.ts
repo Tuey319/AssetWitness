@@ -1,0 +1,34 @@
+import { Router } from 'express';
+import axios from 'axios';
+import { config } from '../config';
+import upload from '../middleware/upload';
+import * as agentController from '../controllers/agentController';
+import * as extractController from '../controllers/extractController';
+
+const router = Router();
+
+router.get('/health', async (_req, res) => {
+  try {
+    const { data } = await axios.get<{ corpus_ready?: boolean }>(
+      `${config.agents.agent03}/health`,
+      { timeout: 2000 },
+    );
+    res.json({ status: 'ok', corpus_loaded: data.corpus_ready ?? false });
+  } catch {
+    res.json({ status: 'ok', corpus_loaded: false });
+  }
+});
+
+router.post(
+  '/run/agent01',
+  upload.fields([{ name: 'move_in', maxCount: 1 }, { name: 'move_out', maxCount: 1 }]),
+  agentController.runAgent01,
+);
+
+router.post('/run/agent02', upload.single('contract_file'), agentController.runAgent02);
+router.post('/run/agent03', agentController.runAgent03);
+router.post('/run/agent04', agentController.runAgent04);
+
+router.post('/extract-contract', upload.single('contract_file'), extractController.extractContract);
+
+export default router;
