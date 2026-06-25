@@ -1,14 +1,14 @@
-import type { NextConfig } from 'next';
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   async rewrites() {
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     return [
       { source: '/run/:path*',          destination: `${backendUrl}/run/:path*` },
       { source: '/extract-contract',    destination: `${backendUrl}/extract-contract` },
       { source: '/health',              destination: `${backendUrl}/health` },
+      { source: '/download/:path*',     destination: `${backendUrl}/download/:path*` },
     ];
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

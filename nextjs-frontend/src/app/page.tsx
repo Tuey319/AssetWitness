@@ -173,6 +173,10 @@ export default function Home() {
         body: JSON.stringify({
           documents_to_generate: d3.documents_to_generate ?? ['demand_letter', 'evidence_summary'],
           total_unlawful_thb:    d3.total_unlawful_thb ?? 0,
+          verdicts:              d3.verdicts ?? [],
+          case_summary_th:       d3.case_summary_th ?? '',
+          case_summary_en:       d3.case_summary_en ?? '',
+          claims:                validClaims,
         }),
       }).then(r => r.json());
       if (d4.error) throw new Error(`Agent 04: ${d4.error}`);

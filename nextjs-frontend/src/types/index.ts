@@ -84,9 +84,11 @@ export interface DocumentInfo {
   doc_type: string;
   pages: number;
   status: string;
+  download_url?: string;
 }
 
 export interface Agent04Result {
+  case_id?: string;
   documents: Record<string, DocumentInfo>;
   generation_time_seconds: number;
   total_unlawful_amount_thb: number;

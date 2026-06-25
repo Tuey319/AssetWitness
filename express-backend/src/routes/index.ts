@@ -29,6 +29,19 @@ router.post('/run/agent02', upload.single('contract_file'), agentController.runA
 router.post('/run/agent03', agentController.runAgent03);
 router.post('/run/agent04', agentController.runAgent04);
 
+router.get('/download/:caseId/:docType', async (req, res, next) => {
+  try {
+    const { caseId, docType } = req.params;
+    const url = `${config.agents.agent04}/api/v1/download/${encodeURIComponent(caseId)}/${encodeURIComponent(docType)}`;
+    const response = await axios.get(url, { responseType: 'stream' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${docType}_${caseId}.pdf"`);
+    (response.data as NodeJS.ReadableStream).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/extract-contract', upload.single('contract_file'), extractController.extractContract);
 
 export default router;

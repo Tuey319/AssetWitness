@@ -1,193 +1,183 @@
-# RoomWitness — AI Pipeline for Thai Rental Deposit Disputes
+# RoomWitness — Python AI Services
 
-RoomWitness helps Bangkok renters dispute unfair security deposit deductions.
-It takes move-in/out photos, a lease contract, and the landlord's damage claim,
-then produces three ready-to-file Thai legal documents via a 4-agent AI pipeline.
+Four FastAPI microservices that power the RoomWitness dispute analysis pipeline.
 
-## Pipeline Overview
+## Pipeline
 
 ```
-[Photos + Screenshots]        [Lease PDF]
-         │                         │
-         ▼                         ▼
-   Agent 01 (CV)           Agent 02 (Parser)
-   Groq Llama-4-Scout      Typhoon v2 + OCR
-   damage_map[]            liability_map[]
-         │                         │
-         └──────────┬──────────────┘
-                    ▼
-           Agent 03 (Legal Brain)
-           Hard rules + RAG + Typhoon v2
-           verdicts[] + routing
-                    │
-                    ▼
-           Agent 04 (Doc Generator)
-           Typhoon v2 + ReportLab
-           3 Thai PDFs → S3
+POST /api/v1/agent01  →  damage_map[]          (CV photo comparison)
+POST /api/v1/agent02  →  liability_map[]        (contract parsing)
+POST /api/v1/agent03  →  verdicts[] + routing   (legal reasoning)
+POST /api/v1/agent04  →  PDFs saved locally     (document generation)
+GET  /api/v1/download/{case_id}/{doc_type}       (PDF download)
 ```
 
-| Agent | Role | Port | LLM |
-|-------|------|------|-----|
-| **Agent 01** | CV — compare move-in vs move-out photos + read chat screenshots | 8001 | Groq Llama-4-Scout |
-| **Agent 02** | Contract Parser — extract lease terms, liability map, void clauses | 8002 | Typhoon v2 |
-| **Agent 03** | Legal Reasoning — hard rules + RAG + per-claim verdicts + routing | 8003 | Typhoon v2 |
-| **Agent 04** | Document Generator — render 3 Thai legal PDFs, upload to S3 | 8004 | Typhoon v2 |
+## Agent Summary
 
-## Team
-
-- **KP** — Lead
-- **Beam** — Frontend
-- **Tuey** — Tech Lead
-
-## Repository Structure
-
-```
-RoomWitness/                      # repo root
-├── nextjs-frontend/              # React UI — Next.js 14, TypeScript
-├── express-backend/              # API proxy server — Express.js
-└── roomwitness-rag/              # Python AI microservices
-    ├── services/                 # Bridge services for demo (ports 8001–8004)
-    │   ├── agent01_service.py    # CV assessment (Groq)
-    │   ├── agent02_service.py    # Contract parser (mock)
-    │   ├── agent03_service.py    # Legal reasoning (Groq + ChromaDB)
-    │   └── agent04_service.py    # Document generator (mock)
-    ├── agent01_cv/               # Vision agent — Groq Llama-4-Scout
-    │   ├── cv.py                 # Photo comparison logic
-    │   ├── evidence.py           # Conversation screenshot extraction (LINE/WhatsApp)
-    │   ├── models.py             # CVResult schema + translate_to_cv_result()
-    │   └── main.py               # Production FastAPI app (POST /api/v1/agent01)
-    ├── agent02_contract_parser/  # Lease contract PDF parser — Typhoon v2
-    ├── agent03_legal_reasoning/  # Legal brain — RAG + hard rules + Typhoon v2
-    │   └── legal_corpus/         # OCPB 2568 + CCC §537-571 JSON chunks
-    ├── agent04_doc_generator/    # PDF renderer — ReportLab + Typhoon v2
-    │   ├── templates/            # Document structure definitions
-    │   └── fonts/                # Place Sarabun .ttf files here
-    ├── shared/                   # Shared utilities (config, typhoon_client, s3_client)
-    ├── legacy/                   # Pre-hackathon Groq prototype (rag_agent.py)
-    ├── portal/                   # Original Flask portal (reference only)
-    ├── chroma_db/                # ChromaDB vector store (auto-created by seed_corpus.py)
-    └── .env.example              # Copy to .env and fill in credentials
-```
-
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for full dev setup and code conventions.
-
-## Prerequisites
-
-- Python 3.11+
-- Tesseract OCR with Thai language pack (required by Agent 02):
-  - Ubuntu/Debian: `sudo apt-get install tesseract-ocr tesseract-ocr-tha`
-  - macOS: `brew install tesseract tesseract-lang`
-  - Windows: https://github.com/UB-Mannheim/tesseract/wiki
-- AWS S3 bucket (`roomwitness-cases` by default)
-- Groq API key (free) — register at https://console.groq.com
-- Typhoon v2 API key — register at https://typhoon.apps.opentyphoon.ai (**do this now**)
+| Agent | Service file | LLM | Port |
+|-------|-------------|-----|------|
+| **01 — CV** | `services/agent01_service.py` | Groq Llama-4-Scout | 8001 |
+| **02 — Contract Parser** | `services/agent02_service.py` | pdfplumber (no LLM) | 8002 |
+| **03 — Legal Reasoning** | `services/agent03_service.py` | Typhoon v2.5 + ChromaDB RAG | 8003 |
+| **04 — Doc Generator** | `services/agent04_service.py` | Typhoon v2.5 + ReportLab | 8004 |
 
 ## Setup
 
-```bash
-# 1. Copy environment file and fill in credentials
-cp .env.example .env
-# Required: GROQ_API_KEY, TYPHOON_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+### 1 — Environment
 
-# 2. Install dependencies for each agent
-pip install -r agent01_cv/requirements.txt
-pip install -r agent02_contract_parser/requirements.txt
-pip install -r agent03_legal_reasoning/requirements.txt
-pip install -r agent04_doc_generator/requirements.txt
+```bash
+cp .env.example .env
 ```
 
-## Seed RAG Corpus (run ONCE before starting Agent 03)
+Fill in `.env`:
+
+```
+GROQ_API_KEY=...          # https://console.groq.com (free)
+TYPHOON_API_KEY=...       # https://typhoon.apps.opentyphoon.ai
+TYPHOON_BASE_URL=https://api.opentyphoon.ai/v1
+TYPHOON_MODEL=typhoon-v2.5-30b-a3b-instruct
+
+# AWS S3 — optional, Agent 04 uses local storage by default
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_REGION=ap-southeast-1
+S3_BUCKET=roomwitness-cases
+```
+
+### 2 — Install dependencies
+
+> **Windows:** use `python -m pip` — plain `pip` fails with the uv trampoline.
+
+```bash
+python -m pip install fastapi uvicorn "uvicorn[standard]" python-multipart python-dotenv \
+    groq chromadb sentence-transformers pdfplumber \
+    reportlab langchain-openai langchain-core \
+    requests pillow lxml beautifulsoup4
+```
+
+### 3 — Seed ChromaDB (run ONCE)
+
+Loads OCPB 2568 and Civil Code §537–571 into ChromaDB. Re-run only if you update `legal_corpus/*.json`.
 
 ```bash
 python agent03_legal_reasoning/seed_corpus.py
 ```
 
-Loads OCPB 2568 and Civil Code §537-571 into ChromaDB. Run again only if you update `legal_corpus/*.json`.
+Data is persisted to `chroma_db/` — no need to reseed on restart.
 
-## Thai Font Setup for Agent 04 (REQUIRED before generating PDFs)
+### 4 — Start services
 
-1. Download Sarabun from https://fonts.google.com/specimen/Sarabun
-2. Place these two files in `agent04_doc_generator/fonts/`:
-   - `Sarabun-Regular.ttf`
-   - `Sarabun-Bold.ttf`
+> **Windows:** use `python -m uvicorn` — plain `uvicorn` fails with the uv trampoline.
 
-Without them, ReportLab falls back to Helvetica — Thai characters will not render.
-
-## Run All Agents
-
-### Option A — Bridge services (recommended for demo)
-
-The bridge services accept the same HTTP format as the frontend and run the working
-Flask portal logic. Start them from `roomwitness-rag/`:
+Run each command in a separate terminal from `roomwitness-rag/`:
 
 ```bash
-uvicorn services.agent01_service:app --port 8001 --reload
-uvicorn services.agent02_service:app --port 8002 --reload
-uvicorn services.agent03_service:app --port 8003 --reload
-uvicorn services.agent04_service:app --port 8004 --reload
+python -m uvicorn services.agent01_service:app --port 8001 --reload
+python -m uvicorn services.agent02_service:app --port 8002 --reload
+python -m uvicorn services.agent03_service:app --port 8003 --reload
+python -m uvicorn services.agent04_service:app --port 8004 --reload
 ```
 
-### Option B — Production FastAPI agents (requires S3 + Typhoon v2)
+Interactive docs at `http://localhost:800X/docs`.
 
-```bash
-uvicorn agent01_cv.main:app --port 8001 --reload
-uvicorn agent02_contract_parser.main:app --port 8002 --reload
-uvicorn agent03_legal_reasoning.main:app --port 8003 --reload
-uvicorn agent04_doc_generator.main:app --port 8004 --reload
+## Agent Details
+
+### Agent 01 — CV Damage Assessment
+
+Compares move-in vs move-out photos using Groq's Llama-4-Scout vision model.
+
+**Input:** multipart form — `move_in` (image), `move_out` (image), `claims` (JSON string)  
+**Output:** `damage_map[]` — per-claim CV verdict (`NEW_DAMAGE`, `NORMAL_WEAR`, `PRE_EXISTING`, `UNCHANGED`, `unverifiable_by_cv`)
+
+### Agent 02 — Contract Parser
+
+Extracts lease terms, tenant liability map, and void clauses from the rental contract.
+
+**Input:** multipart form — `contract_file` (PDF/image), lease metadata fields  
+**Output:** `liability_map[]`, `contract_summary{}`, `unfair_clauses[]`
+
+No LLM used — pdfplumber + regex extraction.
+
+### Agent 03 — Legal Reasoning
+
+Applies deterministic hard rules then calls Typhoon v2.5 with ChromaDB-retrieved Thai law context for per-claim verdicts.
+
+**Input:** JSON — `claims[]`, `damage_map[]`, `contract_clause`, `landlord_unit_count`, `has_void_clause`  
+**Output:** `verdicts[]`, `routing` (OCPB/CIVIL/BOTH), `total_unlawful_thb`, `case_summary_th/en`
+
+Hard rules (no LLM needed):
+- `NORMAL_WEAR` → **UNLAWFUL** (OCPB 2568 §6)
+- `PRE_EXISTING` → **UNLAWFUL**
+- `UNCHANGED` → **UNLAWFUL**
+- CV confidence < 60% → **DISPUTED**
+
+RAG corpus: `legal_corpus/ocpb_2568.json` + `legal_corpus/ccc_537_571.json`
+
+### Agent 04 — Document Generator
+
+Generates professional Thai legal PDFs using Typhoon v2.5 for narrative text and ReportLab Platypus for layout. PDFs are saved to `outputs/{case_id}/` locally.
+
+**Input:** JSON — `documents_to_generate[]`, `total_unlawful_thb`, `verdicts[]`, `case_summary_th/en`, `claims[]`  
+**Output:** per-document `{ doc_type, pages, status, download_url }`
+
+Documents generated:
+- `demand_letter` — หนังสือเรียกร้องคืนเงินประกัน (formal demand with unlawful claims table + signature block)
+- `evidence_summary` — สรุปหลักฐานและผลวินิจฉัย (stat boxes + color-coded verdict table)
+- `ocpb_complaint` — หนังสือร้องเรียน สคบ. (official complaint form layout with attachments checklist)
+
+**Thai font:** Leelawadee (`C:\Windows\Fonts\leelawad.ttf`) — built into Windows, no download needed. Falls back to Helvetica on non-Windows systems (Thai characters won't render without a Thai TTF).
+
+**PDF download:** `GET /api/v1/download/{case_id}/{doc_type}` — served from `outputs/`.
+
+**S3:** `agent04_doc_generator/uploader.py` is kept for future use once AWS credentials are configured. Not called by the bridge service.
+
+## Repository Structure
+
+```
+roomwitness-rag/
+├── services/                     # Bridge services (what the frontend calls)
+│   ├── agent01_service.py        # Groq CV (real)
+│   ├── agent02_service.py        # pdfplumber parser (real)
+│   ├── agent03_service.py        # Typhoon + ChromaDB RAG (real)
+│   └── agent04_service.py        # Typhoon + ReportLab, local PDF (real)
+│
+├── agent01_cv/                   # CV module (used by agent01_service)
+├── agent02_contract_parser/      # Parser module (used by agent02_service)
+├── agent03_legal_reasoning/      # Legal module (used by agent03_service)
+│   ├── legal_corpus/             # OCPB 2568 + CCC JSON chunks
+│   ├── retriever.py              # ChromaDB query helpers
+│   ├── reasoner.py               # Hard rules + LLM reasoning
+│   ├── router.py                 # OCPB/CIVIL/BOTH routing logic
+│   ├── prompts.py                # Typhoon prompt templates
+│   └── seed_corpus.py            # One-time corpus loader
+│
+├── agent04_doc_generator/        # Production module (S3 path, future use)
+│   ├── templates/                # Document structure definitions
+│   ├── renderer.py               # ReportLab canvas renderer (legacy)
+│   └── uploader.py               # S3 upload (not used yet)
+│
+├── shared/                       # Shared config + clients
+│   ├── config.py                 # Env vars
+│   ├── typhoon_client.py         # LangChain ChatOpenAI → Typhoon
+│   └── s3_client.py              # Boto3 S3 helpers
+│
+├── chroma_db/                    # ChromaDB persistent store (gitignored)
+├── outputs/                      # Generated PDFs (gitignored)
+├── test_images/                  # Sample move-in/out photos for testing
+├── .env                          # Local credentials (gitignored)
+└── .env.example                  # Template
 ```
 
-## API Endpoints
+## Testing
 
-| Method | Path | Agent | Description |
-|--------|------|-------|-------------|
-| POST | `/api/v1/agent01` | 01 | CV photo comparison + chat screenshot extraction → damage_map |
-| POST | `/api/v1/agent02` | 02 | Parse lease PDF → liability_map + contract_summary |
-| POST | `/api/v1/agent03` | 03 | Legal reasoning → verdicts + routing + case summary |
-| POST | `/api/v1/agent04` | 04 | Generate Thai legal PDFs → S3 presigned URLs |
-| GET  | `/health`         | all | `{"status":"ok","agent":"XX"}` |
+Sample test images are in `test_images/`:
+- `move_in.jpg` — clean room (no damage)
+- `move_out.jpg` — same room with visible scratches, stain, and crack
 
-Interactive API docs available at `http://localhost:800X/docs` for each agent.
+Sample claims for a full pipeline test:
 
-## Demo Mode (no AWS for Agent 01 + 02)
-
-Pass local file paths instead of `s3://` URLs for images and the lease PDF:
-
-```json
-{ "movein_image_url": "/path/to/movein.jpg", "moveout_image_url": "/path/to/moveout.jpg" }
-{ "lease_contract_url": "/path/to/lease.pdf" }
-```
-
-Agent 04 still requires AWS credentials to upload output PDFs to S3.
-
-## Data Flow (call order)
-
-```
-POST /api/v1/agent01  →  damage_map[]
-POST /api/v1/agent02  →  liability_map[], contract_summary{}
-POST /api/v1/agent03  (receives damage_map + liability_map)  →  verdicts[], routing
-POST /api/v1/agent04  (receives verdicts + routing)  →  PDF download URLs
-```
-
-Agent 01 is optional — pass `damage_map: []` to Agent 03 to skip CV and let Typhoon reason from contract + law alone.
-
-## Full Stack: Run Everything
-
-```bash
-# Terminal 1-4: Python bridge services (from roomwitness-rag/)
-uvicorn services.agent01_service:app --port 8001 --reload
-uvicorn services.agent02_service:app --port 8002 --reload
-uvicorn services.agent03_service:app --port 8003 --reload
-uvicorn services.agent04_service:app --port 8004 --reload
-
-# Terminal 5: Express backend
-cd express-backend && npm run dev    # http://localhost:3001
-
-# Terminal 6: Next.js frontend
-cd nextjs-frontend && npm run dev    # http://localhost:3000
-```
-
----
-
-## Legacy prototype
-
-`legacy/` contains the pre-hackathon Groq + Flask prototype (`rag_agent.py`, `build_corpus.py`, `portal/`, `scraper/`). Not deployed.
+| claim_id | item | description | amount_thb |
+|----------|------|-------------|-----------|
+| C001 | Wall scratches | Multiple scratch marks on bedroom wall | 2500 |
+| C002 | Floor stain | Large stain on living room tiles | 1800 |
+| C003 | Wall crack | Crack on bathroom wall | 3200 |

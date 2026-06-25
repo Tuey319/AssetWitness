@@ -1,32 +1,66 @@
 """
-Agent 03 bridge service — accepts JSON body from Express/Next.js.
-Legal reasoning via Groq + ChromaDB RAG (real implementation).
+Agent 03 bridge service — Legal Reasoning via Typhoon v2 + ChromaDB RAG.
 
 Run from roomwitness-rag/:
-    uvicorn services.agent03_service:app --port 8003 --reload
+    python -m uvicorn services.agent03_service:app --port 8003 --reload
 """
 
+import json
+import logging
 import os
 import sys
-import traceback
+
+from dotenv import load_dotenv
+load_dotenv()
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import JsonOutputParser
 
-# legacy/ contains rag_agent.py
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "legacy"))
+# Make roomwitness-rag/ importable as a package root
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from agent03_legal_reasoning.retriever import (
+    build_rag_query,
+    format_chunks_for_prompt,
+    get_chroma_client,
+    get_collection,
+    retrieve_chunks,
+)
+from agent03_legal_reasoning.reasoner import apply_hard_rules, reason_claim
+from agent03_legal_reasoning.prompts import SUMMARY_PROMPT
+from agent03_legal_reasoning.router import determine_routing
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="RoomWitness Agent 03 — Legal Reasoning Bridge Service")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+TYPHOON_API_KEY = os.getenv("TYPHOON_API_KEY")
+TYPHOON_BASE_URL = os.getenv("TYPHOON_BASE_URL", "https://api.opentyphoon.ai/v1")
+TYPHOON_MODEL = os.getenv("TYPHOON_MODEL", "typhoon-v2-70b-instruct")
+
+
+def _get_llm() -> ChatOpenAI | None:
+    if not TYPHOON_API_KEY:
+        logger.warning("TYPHOON_API_KEY not set — verdicts will use fallback text")
+        return None
+    return ChatOpenAI(
+        api_key=TYPHOON_API_KEY,
+        base_url=TYPHOON_BASE_URL,
+        model=TYPHOON_MODEL,
+        temperature=0.1,
+    )
 
 
 @app.get("/health")
 def health():
     corpus_ready = False
     try:
-        from rag_agent import _get_collection
-        col = _get_collection()
+        col = get_collection(get_chroma_client())
         corpus_ready = col.count() > 0
     except Exception:
         pass
@@ -37,25 +71,20 @@ def health():
 async def run_agent03(request: Request):
     data = await request.json()
 
-    claims              = data.get("claims", [])
-    damage_map          = data.get("damage_map", [])
-    contract_clause     = data.get("contract_clause", "")
-    landlord_unit_count = int(data.get("landlord_unit_count", 0))
-    has_void_clause     = bool(data.get("has_void_clause", False))
+    claims: list = data.get("claims", [])
+    damage_map: list = data.get("damage_map", [])
+    contract_clause: str = data.get("contract_clause", "")
+    landlord_unit_count: int = int(data.get("landlord_unit_count", 0))
+    has_void_clause: bool = bool(data.get("has_void_clause", False))
 
     if not claims:
         return JSONResponse({"error": "No claims"}, status_code=400)
 
-    try:
-        from rag_agent import classify_claim
-    except ImportError as e:
-        return JSONResponse({"error": f"rag_agent import failed: {e}"}, status_code=500)
-
+    llm = _get_llm()
     cv_by_id = {r.get("claim_id"): r for r in damage_map}
-    VERDICT_MAP = {"LAWFUL": "LAWFUL", "DISPUTED": "DISPUTED", "UNLAWFUL": "UNLAWFUL"}
 
-    verdicts       = []
-    total_claimed  = 0.0
+    verdicts: list[dict] = []
+    total_claimed = 0.0
     total_unlawful = 0.0
 
     for claim in claims:
@@ -63,102 +92,130 @@ async def run_agent03(request: Request):
         total_claimed += amt
         cv = cv_by_id.get(claim.get("claim_id"), {})
 
-        cv_evidence = {
-            "item_matched":           True,
-            "move_in_condition":      cv.get("move_in_condition", ""),
-            "move_out_condition":     cv.get("move_out_condition", ""),
-            "change_detected":        cv.get("verdict") not in (None, "UNCHANGED"),
-            "likely_tenant_caused":   cv.get("verdict") == "NEW_DAMAGE",
-            "confidence":             float(cv.get("confidence", 0.5)),
-            "notes":                  cv.get("notes", ""),
-            "wear_and_tear":          cv.get("verdict") == "NORMAL_WEAR",
-            "wear_and_tear_reason":   cv.get("wear_and_tear_reason", ""),
-            "supports_landlord_claim": cv.get("supports_landlord_claim", "PARTIAL"),
-        }
+        cv_verdict = cv.get("verdict")
+        cv_confidence = float(cv.get("confidence", 0.5))
 
+        if cv.get("status") == "unverifiable_by_cv":
+            cv_verdict = "unverifiable_by_cv"
+            cv_confidence = 0.0
+
+        # Apply deterministic hard rules first
+        forced = apply_hard_rules(
+            cv_verdict=cv_verdict,
+            cv_confidence=cv_confidence,
+            contract_liable=False,
+            movein_report_signed=False,
+        )
+
+        # If contract has a void clause, a new-damage claim that would be LAWFUL becomes DISPUTED
+        if cv_verdict == "NEW_DAMAGE" and has_void_clause and forced is None:
+            forced = "DISPUTED"
+
+        # RAG retrieval
+        query = build_rag_query(
+            claim.get("item", ""),
+            claim.get("description", ""),
+            cv_verdict,
+        )
         try:
-            result = classify_claim(claim, cv_evidence, contract_clause)
-        except Exception:
-            traceback.print_exc()
-            result = {
-                "classification": "DISPUTED",
-                "confidence": 0.0,
-                "dispute_amount": amt,
-                "dimensions": {},
-                "legal_basis": [],
-                "summary_th": "ไม่สามารถวิเคราะห์ได้",
-                "retrieved_sections": [],
+            chunks = retrieve_chunks(query, top_k=3)
+        except Exception as exc:
+            logger.warning("ChromaDB retrieval failed for '%s': %s", claim.get("item"), exc)
+            chunks = []
+        formatted = format_chunks_for_prompt(chunks)
+
+        # LLM reasoning
+        if llm:
+            try:
+                raw = reason_claim(
+                    item=claim.get("item", ""),
+                    description=claim.get("description", ""),
+                    amount_thb=amt,
+                    cv_verdict=cv_verdict,
+                    cv_confidence=cv_confidence,
+                    contract_liable=False,
+                    movein_report_signed=False,
+                    formatted_chunks=formatted,
+                    forced_verdict=forced,
+                    llm=llm,
+                )
+            except Exception as exc:
+                logger.warning("reason_claim failed for '%s': %s", claim.get("item"), exc)
+                raw = {
+                    "verdict": forced or "DISPUTED",
+                    "reasoning_th": "ไม่สามารถวิเคราะห์ได้",
+                    "reasoning_en": "Analysis failed",
+                    "citations": [],
+                    "recommended_action_th": "ขอคำแนะนำจากผู้เชี่ยวชาญ",
+                    "claim_validity_pct": 0,
+                }
+        else:
+            raw = {
+                "verdict": forced or "DISPUTED",
+                "reasoning_th": "ไม่สามารถวิเคราะห์ได้ (TYPHOON_API_KEY not configured)",
+                "reasoning_en": "Analysis unavailable — Typhoon API key not set",
+                "citations": [],
+                "recommended_action_th": "กรุณาตั้งค่า TYPHOON_API_KEY ใน .env",
+                "claim_validity_pct": 0,
             }
 
-        verdict   = VERDICT_MAP.get(result.get("classification", "DISPUTED"), "DISPUTED")
-        cv_verdict = cv.get("verdict")
-
-        if cv_verdict in ("NORMAL_WEAR", "PRE_EXISTING", "UNCHANGED"):
-            verdict = "UNLAWFUL"
-            result["summary_th"] = (
-                result.get("summary_th", "") +
-                " (ยืนยันโดยผลการตรวจสอบภาพ: " + {
-                    "NORMAL_WEAR":  "เสื่อมสภาพตามปกติ — ไม่ชอบด้วยกฎหมายตามประกาศ สคบ. 2568",
-                    "PRE_EXISTING": "ความเสียหายมีอยู่ก่อนเข้าอยู่ — เรียกร้องไม่ได้",
-                    "UNCHANGED":    "สภาพไม่เปลี่ยนแปลง — ไม่มีความเสียหาย",
-                }[cv_verdict] + ")"
-            )
-        elif cv_verdict == "NEW_DAMAGE" and has_void_clause and verdict == "LAWFUL":
-            verdict = "DISPUTED"
-            result["summary_th"] = (
-                "ข้อสัญญาที่ใช้เรียกร้องค่าเสียหายถูกตัดสินว่าเป็นโมฆะตามประกาศ สคบ. 2568 "
-                "เจ้าของบ้านต้องพิสูจน์ความผิดของผู้เช่าตาม ป.พ.พ. มาตรา 562 แทน"
-            )
-
+        verdict = raw.get("verdict", "DISPUTED")
         if verdict == "UNLAWFUL":
             total_unlawful += amt
 
         verdicts.append({
-            "claim_id":   claim.get("claim_id"),
-            "item":       claim.get("item"),
+            "claim_id": claim.get("claim_id"),
+            "item": claim.get("item"),
             "amount_thb": amt,
-            "verdict":    verdict,
-            "reasoning_th": result.get("summary_th", ""),
-            "reasoning_en": "",
-            "citations":  [
-                f"{b.get('source','')} {b.get('section','')}".strip()
-                for b in result.get("legal_basis", [])
-            ],
-            "recommended_action_th": (
-                "ปฏิเสธการชำระและอ้างกฎหมายที่ระบุ"
-                if verdict == "UNLAWFUL"
-                else "ขอหลักฐานเพิ่มเติมก่อนพิจารณา"
-            ),
-            "claim_validity_pct": int((1 - float(result.get("dispute_amount", 0)) / amt) * 100) if amt else 0,
-            "dimensions":  result.get("dimensions", {}),
-            "confidence":  float(result.get("confidence", 0)),
+            "verdict": verdict,
+            "reasoning_th": raw.get("reasoning_th", ""),
+            "reasoning_en": raw.get("reasoning_en", ""),
+            "citations": raw.get("citations", []),
+            "recommended_action_th": raw.get("recommended_action_th", ""),
+            "claim_validity_pct": int(raw.get("claim_validity_pct", 0)),
+            "confidence": cv_confidence,
         })
 
-    if landlord_unit_count >= 3:
-        routing = "OCPB"
-        docs    = ["ocpb_complaint", "demand_letter", "evidence_summary"]
-    elif landlord_unit_count in (1, 2):
-        routing = "CIVIL"
-        docs    = ["demand_letter", "evidence_summary"]
-    else:
-        routing = "BOTH"
-        docs    = ["ocpb_complaint", "demand_letter", "evidence_summary"]
+    routing_result = determine_routing(landlord_unit_count)
 
+    # Generate case summary
+    case_summary_th = ""
+    case_summary_en = ""
     pct = round(total_unlawful / total_claimed * 100) if total_claimed else 0
 
-    return {
-        "routing":                routing,
-        "documents_to_generate":  docs,
-        "total_claimed_thb":      total_claimed,
-        "total_unlawful_thb":     total_unlawful,
-        "verdicts":               verdicts,
-        "case_summary_th": (
+    if llm:
+        try:
+            summary_chain = SUMMARY_PROMPT | llm | JsonOutputParser()
+            summary = summary_chain.invoke({
+                "verdicts_json": json.dumps(verdicts, ensure_ascii=False),
+                "total_claimed_thb": total_claimed,
+                "total_unlawful_thb": total_unlawful,
+                "routing": routing_result["route"],
+            })
+            case_summary_th = summary.get("case_summary_th", "")
+            case_summary_en = summary.get("case_summary_en", "")
+        except Exception as exc:
+            logger.warning("Summary generation failed: %s", exc)
+
+    if not case_summary_th:
+        case_summary_th = (
             f"ผู้เช่าถูกเรียกร้องค่าเสียหายรวม {total_claimed:,.0f} บาท "
-            f"โดยพบว่า {total_unlawful:,.0f} บาท ({pct}%) ไม่ชอบด้วยกฎหมาย "
-            f"แนะนำให้ดำเนินการตามเส้นทาง {routing}"
-        ),
-        "case_summary_en": (
-            f"Tenant faces {total_claimed:,.0f} THB in claims, "
-            f"{total_unlawful:,.0f} THB ({pct}%) unlawful under OCPB 2568 and CCC §537-571."
-        ),
+            f"พบว่า {total_unlawful:,.0f} บาท ({pct}%) ไม่ชอบด้วยกฎหมาย "
+            f"แนะนำให้ดำเนินการตามเส้นทาง {routing_result['route']}"
+        )
+    if not case_summary_en:
+        case_summary_en = (
+            f"Tenant faces {total_claimed:,.0f} THB in claims; "
+            f"{total_unlawful:,.0f} THB ({pct}%) unlawful under OCPB 2568 / CCC §537-571. "
+            f"Recommended route: {routing_result['route']}."
+        )
+
+    return {
+        "routing": routing_result["route"],
+        "documents_to_generate": routing_result["documents_to_generate"],
+        "total_claimed_thb": total_claimed,
+        "total_unlawful_thb": total_unlawful,
+        "verdicts": verdicts,
+        "case_summary_th": case_summary_th,
+        "case_summary_en": case_summary_en,
     }

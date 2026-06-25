@@ -209,10 +209,22 @@ export default function Pipeline({ steps, results, moveInPreview, moveOutPreview
                   <div key={k} className="doc-card">
                     <div className="doc-icon">📄</div>
                     <strong>{esc(doc.doc_type)}</strong>
-                    <span>{doc.pages} pages</span>
-                    <button className="btn-dl" onClick={() => alert('Typhoon v2 + AWS S3 required for real PDF generation')}>
-                      Download
-                    </button>
+                    <span>{doc.pages} page{doc.pages !== 1 ? 's' : ''}</span>
+                    {doc.download_url && d.case_id ? (
+                      <a
+                        className="btn-dl"
+                        href={`/download/${d.case_id}/${k}`}
+                        download={`${k}_${d.case_id}.pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Download PDF
+                      </a>
+                    ) : (
+                      <button className="btn-dl" disabled>
+                        Not available
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

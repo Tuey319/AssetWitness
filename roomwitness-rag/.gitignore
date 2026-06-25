@@ -19,3 +19,6 @@ Thumbs.db
 # Fonts (download separately — too large for repo)
 agent04_doc_generator/fonts/*.ttf
 agent04_doc_generator/fonts/*.otf
+
+# Outputs
+/outputs

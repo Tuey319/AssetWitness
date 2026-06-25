@@ -35,6 +35,11 @@ export const agent03BodySchema = z.object({
 export const agent04BodySchema = z.object({
   documents_to_generate: z.array(z.string()),
   total_unlawful_thb:    z.number(),
+  // Optional rich context from Agent 03 (used for richer document content)
+  verdicts:              z.array(z.unknown()).optional().default([]),
+  case_summary_th:       z.string().optional().default(''),
+  case_summary_en:       z.string().optional().default(''),
+  claims:                z.array(z.unknown()).optional().default([]),
 });
 
 export type Agent01Body = z.infer<typeof agent01BodySchema>;
