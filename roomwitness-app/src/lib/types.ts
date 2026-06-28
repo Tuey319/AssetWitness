@@ -63,16 +63,50 @@ export interface FullAnalysis {
   cv_summary: CVSummary | null;
   evidence_summary: EvidenceSummary | null;
   images_used: { move_in: string | null; move_out: string | null };
+  // Agent 02 contract data (mirrors web frontend Agent 02 output)
+  contract_summary: ContractSummary | null;
+  unfair_clauses: UnfairClause[];
+  pdf_filename: string | null;
+  // Agent 03 totals
+  total_claimed_thb: number;
+  total_unlawful_thb: number;
+  routing: string;
+  case_summary_th: string;
+  case_summary_en: string;
+}
+
+export interface ContractSummary {
+  deposit_amount_thb: number;
+  deposit_months: number;
+  lease_start: string;
+  lease_end: string;
+  notice_period_days: number;
+  monthly_rent_thb: number;
+}
+
+export interface UnfairClause {
+  clause_text: string;
+  reason_void: string;
 }
 
 export interface AnalyzeForm {
   claims: LandlordClaim[];
+  // Multi-photo (mirrors web frontend)
+  moveInUris?: string[];
+  moveOutUris?: string[];
+  // Legacy single-photo compat
   moveIn?: { uri: string };
   moveOut?: { uri: string };
   screenshots?: { uri: string }[];
   contractClause?: string;
   landlordPromises?: string;
   tenantPromises?: string;
+  // Contract metadata (mirrors web "Additional evidence" fields)
+  leaseStart?: string;
+  leaseEnd?: string;
+  depositAmount?: number;
+  monthlyRent?: number;
+  landlordUnitCount?: number;
 }
 
 /** Error envelope returned by every portal route on failure: `{ error: string }`. */

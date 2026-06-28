@@ -44,16 +44,28 @@ export async function analyze(form: AnalyzeForm): Promise<FullAnalysis> {
   }
   const fd = new FormData();
   fd.append('claims', JSON.stringify(form.claims));
-  if (form.moveIn)
-    fd.append('move_in_image', { uri: form.moveIn.uri, name: 'move_in.jpg', type: 'image/jpeg' } as any);
-  if (form.moveOut)
-    fd.append('move_out_image', { uri: form.moveOut.uri, name: 'move_out.jpg', type: 'image/jpeg' } as any);
+
+  // Multi-photo support (new) — send each as move_in_image / move_out_image
+  (form.moveInUris ?? (form.moveIn ? [form.moveIn.uri] : [])).forEach((uri, i) =>
+    fd.append('move_in_image', { uri, name: `move_in_${i}.jpg`, type: 'image/jpeg' } as any)
+  );
+  (form.moveOutUris ?? (form.moveOut ? [form.moveOut.uri] : [])).forEach((uri, i) =>
+    fd.append('move_out_image', { uri, name: `move_out_${i}.jpg`, type: 'image/jpeg' } as any)
+  );
+
   form.screenshots?.forEach((s, i) =>
     fd.append('screenshots', { uri: s.uri, name: `ss_${i}.jpg`, type: 'image/jpeg' } as any)
   );
-  fd.append('contract_clause', form.contractClause ?? '');
-  fd.append('manual_landlord_promises', form.landlordPromises ?? '');
-  fd.append('manual_tenant_promises', form.tenantPromises ?? '');
+
+  fd.append('contract_clause',          form.contractClause          ?? '');
+  fd.append('manual_landlord_promises', form.landlordPromises        ?? '');
+  fd.append('manual_tenant_promises',   form.tenantPromises          ?? '');
+  fd.append('lease_start',              form.leaseStart              ?? '');
+  fd.append('lease_end',                form.leaseEnd                ?? '');
+  fd.append('deposit_amount',           String(form.depositAmount    ?? 0));
+  fd.append('monthly_rent',             String(form.monthlyRent      ?? 0));
+  fd.append('landlord_unit_count',      String(form.landlordUnitCount ?? 0));
+
   return postForm<FullAnalysis>('/full-analysis', fd);
 }
 

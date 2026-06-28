@@ -47,7 +47,7 @@ router.post('/extract-contract', upload.single('contract_file'), extractControll
 
 router.post(
   '/full-analysis',
-  upload.fields([{ name: 'move_in_image', maxCount: 1 }, { name: 'move_out_image', maxCount: 1 }]),
+  upload.fields([{ name: 'move_in_image', maxCount: 10 }, { name: 'move_out_image', maxCount: 10 }]),
   runFullAnalysis,
 );
 
