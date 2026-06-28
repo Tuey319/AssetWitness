@@ -4,6 +4,7 @@ import { config } from '../config';
 import upload from '../middleware/upload';
 import * as agentController from '../controllers/agentController';
 import * as extractController from '../controllers/extractController';
+import { runFullAnalysis } from '../controllers/fullAnalysisController';
 
 const router = Router();
 
@@ -43,5 +44,11 @@ router.get('/download/:caseId/:docType', async (req, res, next) => {
 });
 
 router.post('/extract-contract', upload.single('contract_file'), extractController.extractContract);
+
+router.post(
+  '/full-analysis',
+  upload.fields([{ name: 'move_in_image', maxCount: 1 }, { name: 'move_out_image', maxCount: 1 }]),
+  runFullAnalysis,
+);
 
 export default router;
