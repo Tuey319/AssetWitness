@@ -74,7 +74,10 @@ export default function DropZone({
       />
 
       {preview ? (
-        <img src={preview} className="dz-preview" alt="" />
+        <>
+          <img src={preview} className="dz-preview" alt="" />
+          <div className="dz-filename">{file?.name}</div>
+        </>
       ) : file ? (
         <div className="dz-doc-name">📄 {file.name}</div>
       ) : (

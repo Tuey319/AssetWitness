@@ -53,13 +53,13 @@ function AgentCard({ n, title, subtitle, colorClass, state, children }: AgentCar
 }
 
 interface Props {
-  steps: StepState[];        // index 0..3 for agents 1..4
+  steps: StepState[];
   results: PipelineResults;
-  moveInPreview:  string | null;
-  moveOutPreview: string | null;
+  moveInPreviews:  string[];
+  moveOutPreviews: string[];
 }
 
-export default function Pipeline({ steps, results, moveInPreview, moveOutPreview }: Props) {
+export default function Pipeline({ steps, results, moveInPreviews, moveOutPreviews }: Props) {
   const [s1, s2, s3, s4] = steps;
 
   return (
@@ -77,24 +77,27 @@ export default function Pipeline({ steps, results, moveInPreview, moveOutPreview
 
       {/* Agent 01 */}
       <AgentCard n={1} title="CV Damage Assessment" subtitle="Groq Llama-4-Scout · ภาพถ่ายเปรียบเทียบ" colorClass="a01" state={s1}>
+        {/* Photo strip — shown once, not per claim */}
+        {(moveInPreviews.length > 0 || moveOutPreviews.length > 0) && (
+          <div className="cv-photo-strip">
+            <div className="cv-strip-col">
+              <div className="cv-photo-label">Move-in</div>
+              <div className="cv-strip-imgs">
+                {moveInPreviews.map((src, i) => <img key={i} src={src} className="cv-strip-img" alt="" />)}
+              </div>
+            </div>
+            <div className="cv-photos-arrow">→</div>
+            <div className="cv-strip-col">
+              <div className="cv-photo-label">Move-out</div>
+              <div className="cv-strip-imgs">
+                {moveOutPreviews.map((src, i) => <img key={i} src={src} className="cv-strip-img" alt="" />)}
+              </div>
+            </div>
+          </div>
+        )}
         <div className="cv-results">
           {results.agent01?.damage_map.map((r, i) => (
             <div key={i} className="cv-row">
-              <div className="cv-photos">
-                <div className="cv-photo-wrap">
-                  <div className="cv-photo-label">Move-in</div>
-                  {moveInPreview
-                    ? <img src={moveInPreview} className="cv-photo" alt="" />
-                    : <div className="cv-photo-empty">No photo</div>}
-                </div>
-                <div className="cv-photos-arrow">→</div>
-                <div className="cv-photo-wrap">
-                  <div className="cv-photo-label">Move-out</div>
-                  {moveOutPreview
-                    ? <img src={moveOutPreview} className="cv-photo" alt="" />
-                    : <div className="cv-photo-empty">No photo</div>}
-                </div>
-              </div>
               <div className="cv-info">
                 <div className="cv-info-header">
                   {r.item && <strong>{esc(r.item)}</strong>}

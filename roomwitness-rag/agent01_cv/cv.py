@@ -11,6 +11,13 @@ from io import BytesIO
 from groq import Groq
 from PIL import Image
 
+try:
+    from langsmith import traceable
+except ImportError:
+    def traceable(**_):
+        def _wrap(fn): return fn
+        return _wrap
+
 # TODO: Ensure GROQ_API_KEY is set in .env
 # TODO: Verify model availability — check https://console.groq.com for latest Scout model ID
 MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
@@ -41,20 +48,21 @@ def prepare_image(image_path: str) -> str:
     return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
+@traceable(name="agent01/assess_claim", run_type="llm")
 def assess_claim(
-    move_in_b64: str,
-    move_out_b64: str,
+    move_in_b64s: list[str],
+    move_out_b64s: list[str],
     claim_item: str,
     claim_description: str,
     claim_amount: float,
     client: Groq,
 ) -> dict:
     """
-    Send both images and one claim to Groq Llama-4-Scout for visual assessment.
+    Send all move-in and move-out images and one claim to Groq Llama-4-Scout.
 
     Args:
-        move_in_b64: Base64 JPEG of move-in photo.
-        move_out_b64: Base64 JPEG of move-out photo.
+        move_in_b64s: List of base64 JPEGs of move-in photos.
+        move_out_b64s: List of base64 JPEGs of move-out photos.
         claim_item: Item name from landlord claim.
         claim_description: Landlord's damage description.
         claim_amount: Claimed amount in THB.
@@ -70,20 +78,25 @@ def assess_claim(
         "Respond only in valid JSON. No prose. No explanation."
     )
 
-    user_text = f"""Evaluate this landlord damage claim by comparing the two room photos.
+    n_in  = len(move_in_b64s)
+    n_out = len(move_out_b64s)
 
-Image 1 = move-in condition (tenant's photo)
-Image 2 = move-out condition (landlord's photo)
+    user_text = f"""Evaluate this landlord damage claim by comparing the room photos.
+
+MOVE-IN PHOTOS: {n_in} image(s) follow — these show the property condition when the tenant moved in.
+MOVE-OUT PHOTOS: {n_out} image(s) follow after — these show the property condition when the tenant moved out.
 
 CLAIM ITEM: {claim_item}
 LANDLORD SAYS: {claim_description}
 AMOUNT CLAIMED: {claim_amount} THB
 
+Look across ALL provided photos to find the claimed item and assess the change.
+
 Return this exact JSON:
 {{
   "item": "the claim item name",
-  "move_in_condition": "describe what you see for this item in image 1",
-  "move_out_condition": "describe what you see for this item in image 2",
+  "move_in_condition": "describe what you see for this item across all move-in photos",
+  "move_out_condition": "describe what you see for this item across all move-out photos",
   "change_detected": true or false,
   "change_description": "what specifically changed, or 'no change detected'",
   "wear_and_tear": true or false,
@@ -100,14 +113,16 @@ Rules:
 - wear_and_tear is true if the change looks like normal aging from regular use, not negligence
 - likely_tenant_caused is null only if you genuinely cannot determine from the photos
 - low_visibility is true if lighting, angle, or photo quality makes assessment difficult
-- If the claimed item is not visible in either photo, set confidence below 0.3 and explain in notes
+- If the claimed item is not visible in any photo, set confidence below 0.3 and explain in notes
 - Do not invent damage that is not visible"""
 
-    content = [
-        {"type": "text", "text": user_text},
-        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{move_in_b64}"}},
-        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{move_out_b64}"}},
-    ]
+    content: list[dict] = [{"type": "text", "text": user_text}]
+    for b64 in move_in_b64s:
+        content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
+    content.append({"type": "text", "text": f"Move-out photos ({n_out}):"})
+    for b64 in move_out_b64s:
+        content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
+
 
     raw = ""
     try:

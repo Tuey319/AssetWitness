@@ -10,11 +10,19 @@ from groq import Groq
 from agent01_cv.cv import assess_claim, prepare_image, MODEL
 from agent01_cv.evidence import run_evidence_analysis as _run_evidence_analysis
 
+try:
+    from langsmith import traceable
+except ImportError:
+    def traceable(**_):
+        def _wrap(fn): return fn
+        return _wrap
+
 
 def _get_client() -> Groq:
     return Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
+@traceable(name="agent01/run_cv_assessment", run_type="chain")
 def run_cv_assessment(
     move_in_paths: list,
     move_out_paths: list,
@@ -22,14 +30,14 @@ def run_cv_assessment(
 ) -> dict:
     """Original flat signature — creates Groq client internally."""
     client = _get_client()
-    move_in_b64  = prepare_image(move_in_paths[0])
-    move_out_b64 = prepare_image(move_out_paths[0])
+    move_in_b64s  = [prepare_image(p) for p in move_in_paths  if p]
+    move_out_b64s = [prepare_image(p) for p in move_out_paths if p]
 
     assessments = []
     for claim in landlord_claims:
         result = assess_claim(
-            move_in_b64=move_in_b64,
-            move_out_b64=move_out_b64,
+            move_in_b64s=move_in_b64s,
+            move_out_b64s=move_out_b64s,
             claim_item=claim["item"],
             claim_description=claim.get("description", ""),
             claim_amount=float(claim.get("amount_thb", 0)),
@@ -54,7 +62,7 @@ def run_cv_assessment(
             "assessment_notes": f"{disputed} of {len(assessments)} claims disputed by photo evidence.",
         },
         "model_used": MODEL,
-        "images_used": {"move_in": move_in_paths[0], "move_out": move_out_paths[0]},
+        "images_used": {"move_in": move_in_paths, "move_out": move_out_paths},
     }
 
 

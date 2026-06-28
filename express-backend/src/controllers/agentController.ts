@@ -9,21 +9,21 @@ import {
 import { postMultipart, postJSON, appendFile, cleanupFiles } from '../services/agentClient';
 
 export async function runAgent01(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const files  = req.files as Record<string, Express.Multer.File[]> | undefined;
-  const moveIn  = files?.move_in?.[0];
-  const moveOut = files?.move_out?.[0];
+  const files    = req.files as Record<string, Express.Multer.File[]> | undefined;
+  const moveIns  = files?.move_in  ?? [];
+  const moveOuts = files?.move_out ?? [];
   try {
     const body = agent01BodySchema.parse(req.body);
     const fd = new FormData();
     fd.append('claims', body.claims);
-    appendFile(fd, 'move_in',  moveIn);
-    appendFile(fd, 'move_out', moveOut);
+    moveIns.forEach(f  => appendFile(fd, 'move_in',  f));
+    moveOuts.forEach(f => appendFile(fd, 'move_out', f));
     const data = await postMultipart('agent01', '/api/v1/agent01', fd);
     res.json(data);
   } catch (err) {
     next(err);
   } finally {
-    cleanupFiles(moveIn, moveOut);
+    cleanupFiles(...moveIns, ...moveOuts);
   }
 }
 

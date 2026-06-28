@@ -10,10 +10,10 @@ const IDLE_STEPS: StepState[] = ['idle', 'idle', 'idle', 'idle'];
 
 export default function Home() {
   // ── Form state ──────────────────────────────────────────────────
-  const [moveInFile,  setMoveInFile]  = useState<File | null>(null);
-  const [moveOutFile, setMoveOutFile] = useState<File | null>(null);
-  const [moveInPrev,  setMoveInPrev]  = useState<string | null>(null);
-  const [moveOutPrev, setMoveOutPrev] = useState<string | null>(null);
+  const [moveInFiles,  setMoveInFiles]  = useState<File[]>([]);
+  const [moveOutFiles, setMoveOutFiles] = useState<File[]>([]);
+  const [moveInPrevs,  setMoveInPrevs]  = useState<string[]>([]);
+  const [moveOutPrevs, setMoveOutPrevs] = useState<string[]>([]);
   const [claims, setClaims] = useState<Claim[]>([
     { claim_id: 'C001', item: '', description: '', amount_thb: 0 },
   ]);
@@ -39,8 +39,46 @@ export default function Home() {
   const [steps,   setSteps]   = useState<StepState[]>(IDLE_STEPS);
   const [results, setResults] = useState<PipelineResults>({});
 
-  const extractBtnRef = useRef<HTMLButtonElement>(null);
+  const extractBtnRef    = useRef<HTMLButtonElement>(null);
   const screenshotInputRef = useRef<HTMLInputElement>(null);
+  const moveInInputRef   = useRef<HTMLInputElement>(null);
+  const moveOutInputRef  = useRef<HTMLInputElement>(null);
+
+  const makePreviews = (files: File[], setPrevs: (p: string[]) => void) => {
+    const readers = files.map(f => new Promise<string>(resolve => {
+      if (!f.type.startsWith('image/')) { resolve(''); return; }
+      const r = new FileReader();
+      r.onload = e => resolve(e.target?.result as string ?? '');
+      r.readAsDataURL(f);
+    }));
+    Promise.all(readers).then(setPrevs);
+  };
+
+  const addMoveIn = (incoming: FileList | null) => {
+    if (!incoming) return;
+    const imgs = Array.from(incoming).filter(f => f.type.startsWith('image/'));
+    setMoveInFiles(prev => {
+      const next = [...prev, ...imgs];
+      makePreviews(next, setMoveInPrevs);
+      return next;
+    });
+  };
+  const removeMoveIn = (i: number) => {
+    setMoveInFiles(prev => { const n = prev.filter((_, idx) => idx !== i); makePreviews(n, setMoveInPrevs); return n; });
+  };
+
+  const addMoveOut = (incoming: FileList | null) => {
+    if (!incoming) return;
+    const imgs = Array.from(incoming).filter(f => f.type.startsWith('image/'));
+    setMoveOutFiles(prev => {
+      const next = [...prev, ...imgs];
+      makePreviews(next, setMoveOutPrevs);
+      return next;
+    });
+  };
+  const removeMoveOut = (i: number) => {
+    setMoveOutFiles(prev => { const n = prev.filter((_, idx) => idx !== i); makePreviews(n, setMoveOutPrevs); return n; });
+  };
 
   // ── Health check ─────────────────────────────────────────────────
   useEffect(() => {
@@ -50,22 +88,6 @@ export default function Home() {
       .catch(() => setCorpusLoaded(false));
   }, []);
 
-  // ── File preview helper ──────────────────────────────────────────
-  const makePreview = (file: File, set: (url: string | null) => void) => {
-    if (!file || !file.type.startsWith('image/')) { set(null); return; }
-    const r = new FileReader();
-    r.onload = e => set(e.target?.result as string);
-    r.readAsDataURL(file);
-  };
-
-  const handleMoveIn = (f: File | null) => {
-    setMoveInFile(f);
-    if (f) makePreview(f, setMoveInPrev); else setMoveInPrev(null);
-  };
-  const handleMoveOut = (f: File | null) => {
-    setMoveOutFile(f);
-    if (f) makePreview(f, setMoveOutPrev); else setMoveOutPrev(null);
-  };
 
   // ── Screenshot upload ────────────────────────────────────────────
   const addScreenshots = (files: FileList | File[]) => {
@@ -125,8 +147,8 @@ export default function Home() {
       // ── Agent 01 ──────────────────────────────────
       setStep(0, 'active');
       const fd1 = new FormData();
-      if (moveInFile)  fd1.append('move_in',  moveInFile);
-      if (moveOutFile) fd1.append('move_out', moveOutFile);
+      moveInFiles.forEach(f  => fd1.append('move_in',  f));
+      moveOutFiles.forEach(f => fd1.append('move_out', f));
       fd1.append('claims', JSON.stringify(validClaims));
       const d1 = await fetch('/run/agent01', { method: 'POST', body: fd1 }).then(r => r.json());
       if (d1.error) throw new Error(`Agent 01: ${d1.error}`);
@@ -223,9 +245,49 @@ export default function Home() {
           {/* ── Photos ─────────────────────────── */}
           <section className="card">
             <h2>Room photos <span className="optional-tag">optional but recommended</span></h2>
-            <div className="photo-pair">
-              <DropZone label="Move-in photo" file={moveInFile} preview={moveInPrev} onFile={handleMoveIn} />
-              <DropZone label="Move-out photo" file={moveOutFile} preview={moveOutPrev} onFile={handleMoveOut} />
+            <input ref={moveInInputRef}  type="file" accept="image/*" multiple className="dz-input"
+              onChange={e => { addMoveIn(e.target.files);  e.target.value = ''; }} />
+            <input ref={moveOutInputRef} type="file" accept="image/*" multiple className="dz-input"
+              onChange={e => { addMoveOut(e.target.files); e.target.value = ''; }} />
+
+            <div className="photo-columns">
+              {/* Move-in column */}
+              <div className="photo-col">
+                <div className="photo-col-label">Move-in photos</div>
+                <div className="photo-thumb-grid">
+                  {moveInPrevs.map((src, i) => (
+                    <div key={i} className="photo-thumb">
+                      <img src={src} alt="" />
+                      <div className="dz-filename">{moveInFiles[i]?.name}</div>
+                      <button type="button" className="thumb-remove" onClick={() => removeMoveIn(i)}>✕</button>
+                    </div>
+                  ))}
+                  <button type="button" className="photo-add-btn"
+                    onClick={() => moveInInputRef.current?.click()}>
+                    <span>+</span>
+                    <span>{moveInFiles.length === 0 ? 'Add photos' : 'Add more'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Move-out column */}
+              <div className="photo-col">
+                <div className="photo-col-label">Move-out photos</div>
+                <div className="photo-thumb-grid">
+                  {moveOutPrevs.map((src, i) => (
+                    <div key={i} className="photo-thumb">
+                      <img src={src} alt="" />
+                      <div className="dz-filename">{moveOutFiles[i]?.name}</div>
+                      <button type="button" className="thumb-remove" onClick={() => removeMoveOut(i)}>✕</button>
+                    </div>
+                  ))}
+                  <button type="button" className="photo-add-btn"
+                    onClick={() => moveOutInputRef.current?.click()}>
+                    <span>+</span>
+                    <span>{moveOutFiles.length === 0 ? 'Add photos' : 'Add more'}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -364,8 +426,8 @@ export default function Home() {
           <Pipeline
             steps={steps}
             results={results}
-            moveInPreview={moveInPrev}
-            moveOutPreview={moveOutPrev}
+            moveInPreviews={moveInPrevs}
+            moveOutPreviews={moveOutPrevs}
           />
         )}
       </main>

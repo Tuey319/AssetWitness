@@ -21,7 +21,7 @@ router.get('/health', async (_req, res) => {
 
 router.post(
   '/run/agent01',
-  upload.fields([{ name: 'move_in', maxCount: 1 }, { name: 'move_out', maxCount: 1 }]),
+  upload.fields([{ name: 'move_in', maxCount: 10 }, { name: 'move_out', maxCount: 10 }]),
   agentController.runAgent01,
 );
 

@@ -20,6 +20,7 @@ load_dotenv()
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from typing import List
 
 app = FastAPI(title="RoomWitness Agent 01 — CV Bridge Service")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -32,9 +33,9 @@ def health():
 
 @app.post("/api/v1/agent01")
 async def run_agent01(
-    move_in:  Optional[UploadFile] = File(None),
-    move_out: Optional[UploadFile] = File(None),
-    claims:   str                  = Form("[]"),
+    move_in:  List[UploadFile] = File(default=[]),
+    move_out: List[UploadFile] = File(default=[]),
+    claims:   str              = Form("[]"),
 ):
     try:
         claim_list = json.loads(claims)
@@ -44,8 +45,10 @@ async def run_agent01(
     if not claim_list:
         return JSONResponse({"error": "No claims provided"}, status_code=400)
 
-    no_photos = not (move_in and move_in.filename and move_out and move_out.filename)
-    if no_photos:
+    move_in_valid  = [f for f in move_in  if f and f.filename]
+    move_out_valid = [f for f in move_out if f and f.filename]
+
+    if not move_in_valid or not move_out_valid:
         return {
             "damage_map": [
                 {
@@ -65,20 +68,27 @@ async def run_agent01(
             "model_used": "skipped",
         }
 
-    tmp_dir  = tempfile.mkdtemp()
-    in_path  = os.path.join(tmp_dir, f"in_{uuid.uuid4().hex}.jpg")
-    out_path = os.path.join(tmp_dir, f"out_{uuid.uuid4().hex}.jpg")
+    tmp_dir   = tempfile.mkdtemp()
+    in_paths  = []
+    out_paths = []
 
     try:
-        with open(in_path, "wb") as f:
-            f.write(await move_in.read())
-        with open(out_path, "wb") as f:
-            f.write(await move_out.read())
+        for upload in move_in_valid:
+            p = os.path.join(tmp_dir, f"in_{uuid.uuid4().hex}.jpg")
+            with open(p, "wb") as f:
+                f.write(await upload.read())
+            in_paths.append(p)
+
+        for upload in move_out_valid:
+            p = os.path.join(tmp_dir, f"out_{uuid.uuid4().hex}.jpg")
+            with open(p, "wb") as f:
+                f.write(await upload.read())
+            out_paths.append(p)
 
         from agent01_cv import run_cv_assessment
         raw = run_cv_assessment(
-            move_in_paths=[in_path],
-            move_out_paths=[out_path],
+            move_in_paths=in_paths,
+            move_out_paths=out_paths,
             landlord_claims=claim_list,
         )
 
@@ -123,6 +133,6 @@ async def run_agent01(
         traceback.print_exc()
         return JSONResponse({"error": traceback.format_exc()}, status_code=500)
     finally:
-        for p in [in_path, out_path]:
+        for p in in_paths + out_paths:
             try: os.remove(p)
             except OSError: pass
