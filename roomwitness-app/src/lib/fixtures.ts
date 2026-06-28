@@ -1,4 +1,4 @@
-import type { FullAnalysis } from './types';
+import type { FullAnalysis, GenerateDocsResult } from './types';
 
 export const mockResult: FullAnalysis = {
   claims: [
@@ -119,4 +119,30 @@ export const mockResult: FullAnalysis = {
     platforms: ['LINE'],
   },
   images_used: { move_in: 'move_in.jpg', move_out: 'move_out.jpg' },
+};
+
+export const mockDocsResult: GenerateDocsResult = {
+  case_id: 'RW-MOCK-0001',
+  documents: {
+    ocpb_complaint: {
+      s3_url: 's3://roomwitness/mock/ocpb_complaint.pdf',
+      download_url: 'https://example.com/mock/ocpb_complaint.pdf',
+      generated_at: '2026-06-28T10:00:00Z',
+      page_count: 3,
+    },
+    deposit_demand: {
+      s3_url: 's3://roomwitness/mock/deposit_demand.pdf',
+      download_url: 'https://example.com/mock/deposit_demand.pdf',
+      generated_at: '2026-06-28T10:00:00Z',
+      page_count: 2,
+    },
+    evidence_summary: {
+      s3_url: 's3://roomwitness/mock/evidence_summary.pdf',
+      download_url: 'https://example.com/mock/evidence_summary.pdf',
+      generated_at: '2026-06-28T10:00:00Z',
+      page_count: 4,
+    },
+  },
+  generation_time_seconds: 6.2,
+  total_unlawful_amount_thb: 8000,
 };
