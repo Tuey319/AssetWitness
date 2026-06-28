@@ -142,16 +142,23 @@ async def run_agent02(
     # ── Clean up Typhoon summary ───────────────────────────────────────
     summary = parsed.get("contract_summary", {})
 
-    # Remove placeholder dates Typhoon sometimes returns verbatim
+    # Remove placeholder dates — never fall back to form values for dates
+    # (form date fields are often test/demo values and would be wrong)
     for field in ("lease_start", "lease_end"):
         val = summary.get(field, "")
         if not val or val == "YYYY-MM-DD" or not str(val).strip():
             summary[field] = ""
 
+    # Numeric fields: use form values as fallback when Typhoon returns 0
+    if not float(summary.get("monthly_rent_thb") or 0) and monthly_rent:
+        summary["monthly_rent_thb"] = float(monthly_rent)
+    if not float(summary.get("deposit_amount_thb") or 0) and deposit_amount:
+        summary["deposit_amount_thb"] = float(deposit_amount)
+
     # Recalculate deposit_months if Typhoon returned 0
     dep = float(summary.get("deposit_amount_thb") or 0)
     rent_val = float(summary.get("monthly_rent_thb") or 0)
-    if summary.get("deposit_months", 0) == 0 and dep and rent_val:
+    if not summary.get("deposit_months") and dep and rent_val:
         summary["deposit_months"] = round(dep / rent_val)
 
     # Attach claim_id and amount_thb to each liability entry
