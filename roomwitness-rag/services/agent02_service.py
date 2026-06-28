@@ -139,16 +139,20 @@ async def run_agent02(
         traceback.print_exc()
         return JSONResponse({"error": traceback.format_exc()}, status_code=500)
 
-    # ── Merge form fallbacks for any fields Typhoon left empty ────────
+    # ── Clean up Typhoon summary ───────────────────────────────────────
     summary = parsed.get("contract_summary", {})
-    if not summary.get("lease_start") and lease_start:
-        summary["lease_start"] = lease_start
-    if not summary.get("lease_end") and lease_end:
-        summary["lease_end"] = lease_end
-    if not summary.get("deposit_amount_thb") and deposit_amount:
-        summary["deposit_amount_thb"] = float(deposit_amount)
-    if not summary.get("monthly_rent_thb") and monthly_rent:
-        summary["monthly_rent_thb"] = float(monthly_rent)
+
+    # Remove placeholder dates Typhoon sometimes returns verbatim
+    for field in ("lease_start", "lease_end"):
+        val = summary.get(field, "")
+        if not val or val == "YYYY-MM-DD" or not str(val).strip():
+            summary[field] = ""
+
+    # Recalculate deposit_months if Typhoon returned 0
+    dep = float(summary.get("deposit_amount_thb") or 0)
+    rent_val = float(summary.get("monthly_rent_thb") or 0)
+    if summary.get("deposit_months", 0) == 0 and dep and rent_val:
+        summary["deposit_months"] = round(dep / rent_val)
 
     # Attach claim_id and amount_thb to each liability entry
     liability_map = parsed.get("liability_map", [])
