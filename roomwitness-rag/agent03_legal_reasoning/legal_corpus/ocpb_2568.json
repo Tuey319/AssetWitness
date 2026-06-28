@@ -13,6 +13,19 @@
     "agent03_use": "ROUTING — check unit count before applying OCPB rules"
   },
   {
+    "chunk_id": "OCPB_2568_deposit_cap",
+    "law_name_th": "ประกาศคณะกรรมการว่าด้วยสัญญา พ.ศ. 2568",
+    "law_name_en": "OCPB Notification B.E. 2568 (2025)",
+    "clause": "Deposit cap — maximum 1 month's rent",
+    "effective_date": "2025-09-04",
+    "text_th": "ผู้ให้เช่าที่ให้เช่าตั้งแต่ 3 ห้องขึ้นไปจะเรียกเก็บเงินประกันเกินกว่าค่าเช่า 1 เดือนไม่ได้ ข้อสัญญาที่เรียกเก็บเงินประกันเกินกว่านี้เป็นโมฆะ",
+    "text_en": "Landlords operating 3 or more residential units may not require a security deposit exceeding 1 month's rent. Any contractual clause demanding a higher deposit is void.",
+    "applies_to": "landlord",
+    "topic_tags": "deposit_cap,1_month,prohibited_clause,void,excess_deposit",
+    "legal_implication": "Deposits of 2–3 months demanded by business landlords are unlawful. Tenant is entitled to a refund of the excess.",
+    "agent03_use": "UNLAWFUL when landlord (3+ units) collected more than 1 month deposit and withholds or deducts from the excess portion"
+  },
+  {
     "chunk_id": "OCPB_2568_deposit_7days",
     "law_name_th": "ประกาศคณะกรรมการว่าด้วยสัญญา พ.ศ. 2568",
     "law_name_en": "OCPB Notification B.E. 2568 (2025)",
@@ -89,5 +102,44 @@
     "topic_tags": "penalty,imprisonment,fine,enforcement",
     "legal_implication": "Cite in OCPB complaint to show landlord faces serious personal liability.",
     "agent03_use": "Include in all OCPB complaint documents to strengthen tenant position"
+  },
+  {
+    "chunk_id": "OCPB_2568_utility_cap",
+    "law_name_th": "ประกาศคณะกรรมการว่าด้วยสัญญา พ.ศ. 2568",
+    "law_name_en": "OCPB Notification B.E. 2568 (2025)",
+    "clause": "OCPB 2568 — utility charge limits",
+    "effective_date": "2025-09-04",
+    "text_th": "ข้อสัญญาที่ห้าม: กำหนดค่าไฟฟ้า ค่าน้ำ สูงกว่าอัตราที่การไฟฟ้า การประปากำหนด เป็นโมฆะ",
+    "text_en": "Prohibited clause: utility charges set at rates higher than those prescribed by relevant state authorities. Landlords cannot charge electricity or water above official MEA/PEA/MWA rates.",
+    "applies_to": "landlord",
+    "topic_tags": "utility_charges,electricity,water,prohibited_clause,MEA,PEA",
+    "legal_implication": "Any utility charge above official state rates is an unlawful deduction.",
+    "agent03_use": "UNLAWFUL when landlord deducted inflated electricity or water charges from deposit"
+  },
+  {
+    "chunk_id": "OCPB_2568_no_rent_increase",
+    "law_name_th": "ประกาศคณะกรรมการว่าด้วยสัญญา พ.ศ. 2568",
+    "law_name_en": "OCPB Notification B.E. 2568 (2025)",
+    "clause": "OCPB 2568 — prohibited unilateral rent increase",
+    "effective_date": "2025-09-04",
+    "text_th": "ข้อสัญญาที่ห้าม: ผู้ให้เช่าขึ้นค่าเช่าหรือค่าบริการก่อนครบกำหนดสัญญาฝ่ายเดียว เป็นโมฆะ",
+    "text_en": "Prohibited clause: landlord unilaterally increases rent or service charges before the lease term expires. Any such clause is void.",
+    "applies_to": "landlord",
+    "topic_tags": "rent_increase,unilateral,prohibited_clause,void",
+    "legal_implication": "Rent increases during a fixed-term lease without mutual agreement are void.",
+    "agent03_use": "UNLAWFUL if deposit deduction includes penalties related to a unilateral rent increase the tenant refused"
+  },
+  {
+    "chunk_id": "OCPB_2568_early_termination",
+    "law_name_th": "ประกาศคณะกรรมการว่าด้วยสัญญา พ.ศ. 2568",
+    "law_name_en": "OCPB Notification B.E. 2568 (2025)",
+    "clause": "OCPB 2568 — tenant early termination right",
+    "effective_date": "2025-09-04",
+    "text_th": "ผู้เช่ามีสิทธิบอกเลิกสัญญาก่อนครบกำหนด หลังจากอยู่อาศัยไม่น้อยกว่าครึ่งหนึ่งของระยะเวลาเช่า โดยแจ้งล่วงหน้า 30 วัน และชำระค่าเช่าคงค้าง ผู้ให้เช่าไม่สามารถริบเงินประกันเป็นค่าปรับได้",
+    "text_en": "Tenants in fixed-term leases have the right to terminate after occupying the property for at least half the lease term, provided they give 30 days written notice and settle all outstanding payments. Landlords cannot forfeit the deposit as a penalty for exercising this right.",
+    "applies_to": "tenant",
+    "topic_tags": "early_termination,tenant_right,deposit_forfeiture,penalty",
+    "legal_implication": "Deposit cannot be forfeited as an early termination penalty if the tenant followed proper notice procedure.",
+    "agent03_use": "UNLAWFUL when landlord keeps deposit as early exit penalty after proper 30-day notice given"
   }
 ]

@@ -57,12 +57,12 @@
     "law_name_en": "Civil and Commercial Code",
     "clause": "มาตรา 561 Section 561",
     "effective_date": "original",
-    "text_th": "ถ้ามิได้ทำคำพรรณนาสภาพทรัพย์สินที่เช่าไว้เป็นหลักฐาน ท่านให้สันนิษฐานไว้ก่อนว่าผู้เช่าได้รับทรัพย์สินนั้นไปโดยอยู่ในสภาพซ่อมแซมดี",
-    "text_en": "If no written condition description has been signed, the tenant is presumed to have received the property in good repair.",
+    "text_th": "ถ้ามิได้ทำคำพรรณนาสภาพทรัพย์สินที่เช่าไว้เป็นหลักฐานและลงลายมือชื่อทั้งสองฝ่าย ท่านให้สันนิษฐานไว้ก่อนว่าผู้เช่าได้รับทรัพย์สินนั้นไปโดยอยู่ในสภาพซ่อมแซมดี และต้องส่งคืนในสภาพเช่นนั้น เว้นแต่จะพิสูจน์ได้ว่าทรัพย์สินนั้นชำรุดบกพร่องตั้งแต่เวลาที่ส่งมอบ",
+    "text_en": "If no written description of the condition of the property has been made and signed by both parties, the tenant is presumed to have received the property in good state of repair and must return it in such condition at the end of the contract, unless the tenant can prove it was out of repair at the time of delivery.",
     "applies_to": "tenant",
-    "topic_tags": "move_in_condition,presumption,burden_of_proof,inspection_report",
-    "legal_implication": "Without signed move-in report, tenant bears burden to prove pre-existing damage. Move-in photos rebut this.",
-    "agent03_use": "Cited when no move-in inspection report exists — Agent 01 photos rebut presumption"
+    "topic_tags": "move_in_condition,presumption,burden_of_proof,inspection_report,return_obligation",
+    "legal_implication": "Without signed move-in report, tenant bears burden to prove pre-existing damage AND must return in good condition. Move-in photos rebut the presumption.",
+    "agent03_use": "Cited when no move-in inspection report exists — Agent 01 move-in photos rebut presumption; also confirms return-in-good-condition obligation"
   },
   {
     "chunk_id": "CCC_562_proper_use",
@@ -70,8 +70,8 @@
     "law_name_en": "Civil and Commercial Code",
     "clause": "มาตรา 562 Section 562",
     "effective_date": "original",
-    "text_th": "ผู้เช่าต้องรับผิดสำหรับความเสียหายอันเกิดขึ้นแก่ทรัพย์สินที่เช่าอันเกิดจากความผิดของผู้เช่าเอง แต่ไม่ต้องรับผิดสำหรับความเสียหายอันเกิดแต่การใช้ตามควร",
-    "text_en": "Tenant liable for damage caused by their own fault. But not liable for damage resulting from proper use.",
+    "text_th": "ผู้เช่าต้องรับผิดสำหรับความเสียหายอันเกิดขึ้นแก่ทรัพย์สินที่เช่าอันเกิดจากความผิดของผู้เช่าเอง หรือความผิดของบุคคลในครัวเรือนหรือผู้เช่าช่วง แต่ไม่ต้องรับผิดสำหรับความเสียหายอันเกิดแต่การใช้ตามควร",
+    "text_en": "The tenant is liable for any loss or damage caused to the property by their own fault, or by the fault of persons living with them or their subhirer. But the tenant is not liable for loss or damage resulting from proper use.",
     "applies_to": "tenant",
     "topic_tags": "tenant_liability,proper_use,wear_and_tear,fault",
     "legal_implication": "Damage from proper residential use is explicitly excluded from tenant liability.",
@@ -89,5 +89,57 @@
     "topic_tags": "limitation_period,6_months,time_bar,legal_action",
     "legal_implication": "Landlord has only 6 months from move-out to file a legal claim. After that, time-barred.",
     "agent03_use": "Check move-out date — if more than 6 months ago, landlord claim may be time-barred"
+  },
+  {
+    "chunk_id": "CCC_550_landlord_repair_duty",
+    "law_name_th": "ประมวลกฎหมายแพ่งและพาณิชย์",
+    "law_name_en": "Civil and Commercial Code",
+    "clause": "มาตรา 550 Section 550",
+    "effective_date": "original",
+    "text_th": "ผู้ให้เช่าต้องรับผิดสำหรับความชำรุดบกพร่องซึ่งเกิดขึ้นในระหว่างสัญญาเช่า และต้องทำการซ่อมแซมที่จำเป็น เว้นแต่การซ่อมแซมที่กฎหมายหรือจารีตประเพณีกำหนดให้เป็นหน้าที่ของผู้เช่า",
+    "text_en": "The landlord is liable for any defects which arise during the continuance of the contract and must make all repairs which may become necessary, except those which are by law or custom to be done by the tenant.",
+    "applies_to": "landlord",
+    "topic_tags": "landlord_repair,defects_during_tenancy,maintenance_duty",
+    "legal_implication": "Defects that develop during the lease from causes other than tenant fault are landlord responsibility.",
+    "agent03_use": "UNLAWFUL when landlord charges tenant for damage that developed from structural or systemic failure during tenancy"
+  },
+  {
+    "chunk_id": "CCC_553_ordinary_care",
+    "law_name_th": "ประมวลกฎหมายแพ่งและพาณิชย์",
+    "law_name_en": "Civil and Commercial Code",
+    "clause": "มาตรา 553 Section 553",
+    "effective_date": "original",
+    "text_th": "ผู้เช่าจำต้องสงวนทรัพย์สินที่เช่านั้นเสมอกับที่วิญญูชนจะพึงสงวนทรัพย์สินของตนเอง และต้องบำรุงรักษาและซ่อมแซมเล็กน้อยด้วย",
+    "text_en": "The tenant is bound to take as much care of the property hired as a person of ordinary prudence would take of his own property, and to do ordinary maintenance and petty repairs.",
+    "applies_to": "tenant",
+    "topic_tags": "standard_of_care,ordinary_prudence,tenant_duty,negligence",
+    "legal_implication": "Standard is ordinary prudence — not perfection. Normal residential living satisfies §553.",
+    "agent03_use": "Rebuttal when landlord claims negligence — tenant who lived normally meets the §553 standard"
+  },
+  {
+    "chunk_id": "CCC_558_alterations",
+    "law_name_th": "ประมวลกฎหมายแพ่งและพาณิชย์",
+    "law_name_en": "Civil and Commercial Code",
+    "clause": "มาตรา 558 Section 558",
+    "effective_date": "original",
+    "text_th": "ผู้เช่าจะทำการดัดแปลงหรือต่อเติมทรัพย์สินที่เช่าโดยปราศจากความยินยอมของผู้ให้เช่าไม่ได้ ถ้าทำไปโดยปราศจากความยินยอม ต้องทำให้คืนสู่สภาพเดิม และรับผิดต่อความเสียหายที่เกิดขึ้น",
+    "text_en": "The tenant may not make alterations in, or additions to, the property hired without the permission of the landlord. If he does so without such permission, he must, on request of the landlord, restore the property to its former condition, and is liable for any loss or damage that may result.",
+    "applies_to": "tenant",
+    "topic_tags": "alterations,modifications,tenant_liability,restoration",
+    "legal_implication": "Unauthorised alterations are a valid claim. BUT remedy is restoration to former condition — not full replacement cost of new materials.",
+    "agent03_use": "LAWFUL if tenant made unauthorised structural changes. DISPUTED if claim amount exceeds restoration cost."
+  },
+  {
+    "chunk_id": "CCC_562_proportionality",
+    "law_name_th": "ประมวลกฎหมายแพ่งและพาณิชย์",
+    "law_name_en": "Civil and Commercial Code",
+    "clause": "มาตรา 222 และ มาตรา 562 — proportionality principle",
+    "effective_date": "original",
+    "text_th": "ค่าสินไหมทดแทนนั้นได้แก่ค่าเสียหายเพื่อความสูญเสียอันเกิดขึ้นจริง (ป.พ.พ. มาตรา 222) ประกอบกับผู้เช่าไม่ต้องรับผิดสำหรับความเสียหายอันเกิดแต่การใช้ตามควร (มาตรา 562) การเรียกร้องค่าเสียหายต้องสมส่วนกับความเสียหายจริง ไม่สามารถเรียกเปลี่ยนของใหม่ทั้งชิ้นสำหรับของที่เสื่อมสภาพตามอายุการใช้งาน",
+    "text_en": "Damages are limited to actual loss caused (CCC §222 — general damages principle). Combined with §562 (tenant not liable for proper-use damage), courts apply a proportionality doctrine: claimed remediation must match actual damage caused. Full replacement cost cannot be claimed for partially damaged or depreciated items — tenant owes the depreciated replacement value only.",
+    "applies_to": "tenant",
+    "topic_tags": "proportionality,depreciation,repair_cost,partial_damage",
+    "legal_implication": "Full replacement cost cannot be claimed for partially damaged or old items. Tenant owes depreciated value only.",
+    "agent03_use": "DISPUTED when claimed amount is disproportionate to damage — flag for negotiation even if damage is real"
   }
 ]

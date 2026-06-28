@@ -113,6 +113,22 @@ Hard rules (no LLM needed):
 
 RAG corpus: `legal_corpus/ocpb_2568.json` + `legal_corpus/ccc_537_571.json`
 
+#### Legal corpus sources
+
+The chunks in `legal_corpus/` were verified against the following primary sources:
+
+**Civil and Commercial Code §537–571 (Hire of Property)**
+- [Thailand Law Library — §537–545](https://library.siam-legal.com/thai-law/civil-and-commercial-code-exchange-section-537-545/)
+- [Thailand Law Library — §552–563](https://library.siam-legal.com/thai-law/civil-and-commercial-code-exchange-section-552-563/)
+- [Thailand Law Online — §537–571 overview](https://www.thailandlawonline.com/civil-and-commercial-code/537-571-lease-or-hire-of-property-laws)
+- [ASEAN — CCC Book III full text (PDF)](https://asean.org/wp-content/uploads/2016/08/Thailand199.pdf)
+
+**OCPB Notification B.E. 2568 (2025) — Residential Lease Contract Controls**
+- [OCPB official announcement](https://www.ocpb.go.th/news_view.php?nid=17156)
+- [Lex Nova Partners — plain-English summary](https://lexnovapartners.com/residential-lease-contracts/)
+- [Formichella & Sritawat — analysis of key changes](https://fosrlaw.com/2025/thailand-residential-leasing-regulations-2025/)
+- [Landager — deposit rules and limits](https://landager.com/en/property-compliance/thailand/national/security-deposits)
+
 ### Agent 04 — Document Generator
 
 Generates professional Thai legal PDFs using Typhoon v2.5 for narrative text and ReportLab Platypus for layout. PDFs are saved to `outputs/{case_id}/` locally.
