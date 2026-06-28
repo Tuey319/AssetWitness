@@ -99,7 +99,7 @@ export default function ResultsScreen() {
         ))}
 
         <View className="pb-8 mt-2">
-          <PrimaryButton title="เอกสาร / Documents →" onPress={() => router.push('/documents')} />
+          <PrimaryButton title="เอกสาร / Documents →" onPress={() => router.push('/details')} />
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -50,13 +50,17 @@ export function ClaimCard({ item }: { item: ClaimResult }) {
         ))}
       </View>
 
-      {/* CV verdict */}
-      <View className="px-4 mb-3">
-        <Text className="text-gray-500 text-xs">
-          ภาพถ่าย:{' '}
-          <Text className="font-semibold text-gray-700">{CV_LABEL[cv.supports_landlord_claim]}</Text>
-        </Text>
-      </View>
+      {/* CV verdict — cv is null/empty when no photos were provided for this claim */}
+      {cv?.supports_landlord_claim && (
+        <View className="px-4 mb-3">
+          <Text className="text-gray-500 text-xs">
+            ภาพถ่าย:{' '}
+            <Text className="font-semibold text-gray-700">
+              {CV_LABEL[cv.supports_landlord_claim] ?? '—'}
+            </Text>
+          </Text>
+        </View>
+      )}
 
       {/* Why toggle */}
       <TouchableOpacity
