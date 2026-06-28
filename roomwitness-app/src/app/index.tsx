@@ -1,14 +1,16 @@
+'use client';
 import { router } from 'expo-router';
+import { ChevronDown, ChevronUp, Plus, X } from 'lucide-react-native';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ImagePickerTile } from '@/components/ImagePickerTile';
@@ -19,7 +21,6 @@ import type { LandlordClaim } from '@/lib/types';
 
 let nextId = 1;
 type ClaimRow = LandlordClaim & { id: number };
-
 function emptyRow(): ClaimRow {
   return { id: nextId++, item: '', description: '', amount_thb: 0 };
 }
@@ -38,11 +39,9 @@ export default function UploadScreen() {
   function updateClaim(id: number, patch: Partial<LandlordClaim>) {
     setClaims((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   }
-
   function removeClaim(id: number) {
     setClaims((prev) => prev.filter((c) => c.id !== id));
   }
-
   function addClaim() {
     setClaims((prev) => [...prev, emptyRow()]);
   }
@@ -68,179 +67,207 @@ export default function UploadScreen() {
   const hasValidClaim = claims.some((c) => c.item.trim().length > 0);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <NavHeader step={1} label="อัปโหลด · Upload" />
+    <SafeAreaView className="flex-1 bg-bg">
+      <NavHeader step={1} label="อัปโหลดข้อมูล" />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView className="flex-1 px-4" keyboardShouldPersistTaps="handled">
-          {/* Hero */}
-          <View className="py-4">
-            <Text className="text-2xl font-bold text-gray-900 leading-tight">
-              ทวงเงินประกันคืน
-            </Text>
-            <Text className="text-base text-gray-600">Reclaim your deposit</Text>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Large title */}
+          <View className="pt-5 pb-4">
+            <Text className="text-3xl font-bold text-navy leading-tight">ทวงเงินประกันคืน</Text>
+            <Text className="text-label-secondary text-base mt-1">Reclaim your deposit</Text>
           </View>
 
-          {/* Claims section */}
-          <Text className="text-gray-800 font-semibold mb-2">
-            รายการ · Required{' '}
-            <Text className="text-gray-500 font-normal text-xs">
-              เจ้าของบ้านหักอะไรบ้าง / What is the landlord deducting for?
-            </Text>
+          {/* ── Claims ──────────────────────────────────────── */}
+          <Text className="text-label text-sm font-semibold mb-2 uppercase tracking-wide">
+            รายการที่ถูกหัก
           </Text>
 
           {claims.map((claim, idx) => (
-            <View key={claim.id} className="bg-gray-50 rounded-lg p-3 mb-2">
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-gray-500 text-xs font-semibold">รายการที่ {idx + 1}</Text>
+            <View key={claim.id} className="bg-bg-secondary rounded-xl mb-2 overflow-hidden">
+              {/* Claim header */}
+              <View className="flex-row items-center px-4 pt-3 pb-1 justify-between">
+                <View className="bg-primary-soft rounded-md px-2 py-0.5">
+                  <Text className="text-primary text-xs font-bold">รายการที่ {idx + 1}</Text>
+                </View>
                 {claims.length > 1 && (
-                  <TouchableOpacity onPress={() => removeClaim(claim.id)}>
-                    <Text className="text-red-400 text-sm font-bold">✕</Text>
-                  </TouchableOpacity>
+                  <Pressable
+                    onPress={() => removeClaim(claim.id)}
+                    hitSlop={12}
+                    className="w-6 h-6 items-center justify-center rounded-full bg-unlawful-soft"
+                  >
+                    <X size={12} color="#FF3B30" strokeWidth={2.5} />
+                  </Pressable>
                 )}
               </View>
-              <TextInput
-                placeholder="รายการ · Item (เช่น สีผนัง)"
-                value={claim.item}
-                onChangeText={(t) => updateClaim(claim.id, { item: t })}
-                className="bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-900 text-sm mb-2"
-                placeholderTextColor="#9CA3AF"
-              />
-              <TextInput
-                placeholder="เหตุผลเจ้าของบ้าน · Their reason"
-                value={claim.description}
-                onChangeText={(t) => updateClaim(claim.id, { description: t })}
-                className="bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-900 text-sm mb-2"
-                placeholderTextColor="#9CA3AF"
-              />
-              <TextInput
-                placeholder="จำนวนเงิน · Amount (฿)"
-                value={claim.amount_thb > 0 ? String(claim.amount_thb) : ''}
-                onChangeText={(t) => updateClaim(claim.id, { amount_thb: Number(t) || 0 })}
-                keyboardType="numeric"
-                className="bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-900 text-sm"
-                placeholderTextColor="#9CA3AF"
-              />
+
+              <View className="px-4 pb-4 gap-2">
+                <TextInput
+                  placeholder="ชื่อรายการ (เช่น สีผนัง, โซฟา)"
+                  value={claim.item}
+                  onChangeText={(t) => updateClaim(claim.id, { item: t })}
+                  className="bg-bg rounded-lg px-3 py-3 text-navy text-sm"
+                  placeholderTextColor="#C7C7CC"
+                  returnKeyType="next"
+                />
+                <TextInput
+                  placeholder="เหตุผลของเจ้าของบ้าน"
+                  value={claim.description}
+                  onChangeText={(t) => updateClaim(claim.id, { description: t })}
+                  className="bg-bg rounded-lg px-3 py-3 text-navy text-sm"
+                  placeholderTextColor="#C7C7CC"
+                  multiline
+                  numberOfLines={2}
+                  textAlignVertical="top"
+                />
+                <TextInput
+                  placeholder="จำนวนเงิน (฿)"
+                  value={claim.amount_thb > 0 ? String(claim.amount_thb) : ''}
+                  onChangeText={(t) => updateClaim(claim.id, { amount_thb: Number(t) || 0 })}
+                  keyboardType="numeric"
+                  className="bg-bg rounded-lg px-3 py-3 text-navy text-sm"
+                  placeholderTextColor="#C7C7CC"
+                />
+              </View>
             </View>
           ))}
 
-          <TouchableOpacity
+          <Pressable
             onPress={addClaim}
-            className="border border-dashed border-primary rounded-lg py-3 items-center mb-6"
+            className="border border-dashed border-primary rounded-xl py-3.5 items-center flex-row justify-center gap-2 mb-6"
           >
-            <Text className="text-primary font-semibold text-sm">+ เพิ่มรายการ · Add item</Text>
-          </TouchableOpacity>
+            <Plus size={16} color="#007AFF" strokeWidth={2} />
+            <Text className="text-primary font-semibold text-sm">เพิ่มรายการ</Text>
+          </Pressable>
 
-          {/* Evidence section */}
-          <Text className="text-gray-800 font-semibold mb-3">
-            หลักฐาน · Supporting evidence{' '}
-            <Text className="text-gray-400 font-normal text-xs">(ไม่บังคับ)</Text>
+          {/* ── Photos ──────────────────────────────────────── */}
+          <Text className="text-label text-sm font-semibold mb-2 uppercase tracking-wide">
+            ภาพถ่าย
           </Text>
-
-          <View className="flex-row gap-3 mb-3">
-            <View className="flex-1">
-              <Text className="text-gray-600 text-xs mb-1">รูปก่อนเข้าอยู่ · Move-in</Text>
-              <ImagePickerTile
-                label="รูปถ่ายก่อนเข้า"
-                sublabel="Move-in photos"
-                onPick={setMoveInUri}
-                uri={moveInUri}
-              />
+          <View className="bg-bg-secondary rounded-xl p-4 mb-3 gap-3">
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Text className="text-label-secondary text-xs mb-1.5 font-medium">ก่อนเข้าอยู่</Text>
+                <ImagePickerTile
+                  label="Move-in"
+                  sublabel="ก่อนเช่า"
+                  onPick={setMoveInUri}
+                  uri={moveInUri}
+                  compact
+                />
+              </View>
+              <View className="flex-1">
+                <Text className="text-label-secondary text-xs mb-1.5 font-medium">ก่อนออก</Text>
+                <ImagePickerTile
+                  label="Move-out"
+                  sublabel="ตอนออก"
+                  onPick={setMoveOutUri}
+                  uri={moveOutUri}
+                  compact
+                />
+              </View>
             </View>
-            <View className="flex-1">
-              <Text className="text-gray-600 text-xs mb-1">รูปก่อนออก · Move-out</Text>
-              <ImagePickerTile
-                label="รูปถ่ายก่อนออก"
-                sublabel="Move-out photos"
-                onPick={setMoveOutUri}
-                uri={moveOutUri}
-              />
-            </View>
-          </View>
 
-          <View className="mb-4">
-            <Text className="text-gray-600 text-xs mb-1">แชทกับเจ้าของบ้าน · Screenshots (LINE/WhatsApp)</Text>
-            <ImagePickerTile
-              label="แชทสกรีนช็อต"
-              sublabel="Chat screenshots — optional"
-              onPick={(uri) => setScreenshotUris((prev) => [...prev, uri])}
-              multiple
-            />
-            {screenshotUris.length > 0 && (
-              <Text className="text-gray-500 text-xs mt-1">
-                {screenshotUris.length} ไฟล์ · files selected
+            <View>
+              <Text className="text-label-secondary text-xs mb-1.5 font-medium">
+                แชทสกรีนช็อต LINE/WhatsApp
               </Text>
-            )}
+              <ImagePickerTile
+                label="อัปโหลดสกรีนช็อต"
+                sublabel="เลือกได้หลายรูป · optional"
+                onPick={(uri) => setScreenshotUris((prev) => [...prev, uri])}
+                multiple
+              />
+              {screenshotUris.length > 0 && (
+                <Text className="text-label-secondary text-xs mt-1">
+                  {screenshotUris.length} ไฟล์ที่เลือก
+                </Text>
+              )}
+            </View>
           </View>
 
-          {/* Optional text inputs */}
-          <TouchableOpacity
+          {/* ── Optional details ────────────────────────────── */}
+          <Pressable
             onPress={() => setShowOptional((v) => !v)}
-            className="flex-row items-center mb-3"
+            className="flex-row items-center gap-1.5 mb-3 py-1"
           >
+            {showOptional
+              ? <ChevronUp size={16} color="#007AFF" strokeWidth={2} />
+              : <ChevronDown size={16} color="#007AFF" strokeWidth={2} />
+            }
             <Text className="text-primary text-sm font-semibold">
-              {showOptional ? '▲' : '▼'} ข้อความเพิ่มเติม · More details (optional)
+              ข้อมูลเพิ่มเติม · More details (optional)
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
           {showOptional && (
-            <View className="gap-3 mb-4">
+            <View className="bg-bg-secondary rounded-xl p-4 mb-5 gap-3">
               <View>
-                <Text className="text-gray-600 text-xs mb-1">ข้อความในสัญญา · Contract clause</Text>
+                <Text className="text-label-secondary text-xs font-medium mb-1.5">
+                  ข้อความในสัญญา · Contract clause
+                </Text>
                 <TextInput
                   placeholder="วางข้อความจากสัญญาเช่า..."
                   value={contractClause}
                   onChangeText={setContractClause}
                   multiline
                   numberOfLines={3}
-                  className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 text-sm"
-                  placeholderTextColor="#9CA3AF"
+                  className="bg-bg rounded-lg px-3 py-3 text-navy text-sm"
+                  placeholderTextColor="#C7C7CC"
                   textAlignVertical="top"
                 />
               </View>
               <View>
-                <Text className="text-gray-600 text-xs mb-1">คำสัญญาจากเจ้าของบ้าน · Landlord promises</Text>
+                <Text className="text-label-secondary text-xs font-medium mb-1.5">
+                  คำสัญญาจากเจ้าของบ้าน
+                </Text>
                 <TextInput
-                  placeholder="สัญญาที่เจ้าของบ้านเคยพูด..."
+                  placeholder="เช่น 'จะคืนเงินประกันภายใน 7 วัน'..."
                   value={landlordPromises}
                   onChangeText={setLandlordPromises}
                   multiline
                   numberOfLines={3}
-                  className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 text-sm"
-                  placeholderTextColor="#9CA3AF"
+                  className="bg-bg rounded-lg px-3 py-3 text-navy text-sm"
+                  placeholderTextColor="#C7C7CC"
                   textAlignVertical="top"
                 />
               </View>
               <View>
-                <Text className="text-gray-600 text-xs mb-1">คำสัญญาจากผู้เช่า · Tenant promises</Text>
+                <Text className="text-label-secondary text-xs font-medium mb-1.5">
+                  คำสัญญาจากผู้เช่า
+                </Text>
                 <TextInput
-                  placeholder="สัญญาที่คุณเคยพูด..."
+                  placeholder="สิ่งที่คุณเคยพูดหรือให้คำมั่น..."
                   value={tenantPromises}
                   onChangeText={setTenantPromises}
                   multiline
                   numberOfLines={3}
-                  className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 text-sm"
-                  placeholderTextColor="#9CA3AF"
+                  className="bg-bg rounded-lg px-3 py-3 text-navy text-sm"
+                  placeholderTextColor="#C7C7CC"
                   textAlignVertical="top"
                 />
               </View>
             </View>
           )}
 
-          <View className="pb-8">
-            <PrimaryButton
-              title="วิเคราะห์ / Analyze →"
-              onPress={handleSubmit}
-              disabled={!hasValidClaim}
-            />
-            {!hasValidClaim && (
-              <Text className="text-gray-400 text-xs text-center mt-2">
-                กรุณาเพิ่มอย่างน้อย 1 รายการ · Add at least 1 claim
-              </Text>
-            )}
-          </View>
+          {/* CTA */}
+          <PrimaryButton
+            title="วิเคราะห์เลย →"
+            onPress={handleSubmit}
+            disabled={!hasValidClaim}
+          />
+          {!hasValidClaim && (
+            <Text className="text-label-tertiary text-xs text-center mt-2">
+              เพิ่มอย่างน้อย 1 รายการก่อน
+            </Text>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
