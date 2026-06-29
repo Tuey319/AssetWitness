@@ -1,33 +1,34 @@
-import { Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
+import { Pressable, Text, View } from 'react-native';
 
-export function NavHeader({ step, label }: { step: 1 | 2 | 3 | 4 | 5; label: string }) {
-  const total = 5;
-
+/**
+ * Stack screen header — back button + title.
+ * Used on Analyzing / Results / Details / Documents (not on tabs).
+ */
+export function NavHeader({
+  title, subtitle, showBack = true,
+}: {
+  title: string; subtitle?: string; showBack?: boolean;
+}) {
   return (
-    <View className="bg-bg-secondary border-b border-separator px-4 pt-2 pb-3">
-      {/* Brand */}
-      <View className="flex-row items-center justify-between mb-3">
-        <View className="flex-row items-center gap-2">
-          <View className="bg-primary rounded-lg w-7 h-7 items-center justify-center">
-            <Text className="text-white text-xs font-bold tracking-tight">RW</Text>
-          </View>
-          <Text className="text-navy font-bold text-sm">RoomWitness</Text>
-        </View>
-        <Text className="text-label-secondary text-xs">{label}</Text>
+    <View className="bg-surface border-b border-line-2 px-4 pt-3 pb-3 flex-row items-center gap-3">
+      {showBack && (
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          className="w-8 h-8 rounded-full bg-canvas items-center justify-center active:bg-surface-3"
+        >
+          <ArrowLeft size={16} color="#09090B" strokeWidth={2} />
+        </Pressable>
+      )}
+      <View className="flex-1">
+        <Text className="text-h3 text-ink font-semibold">{title}</Text>
+        {subtitle && <Text className="text-label text-ink-3 mt-0.5">{subtitle}</Text>}
       </View>
-
-      {/* Progress bar */}
-      <View className="flex-row items-center gap-1">
-        {Array.from({ length: total }).map((_, i) => {
-          const n = i + 1;
-          const done = n <= step;
-          return (
-            <View
-              key={i}
-              className={`flex-1 h-1 rounded-full ${done ? 'bg-primary' : 'bg-separator-opaque'}`}
-            />
-          );
-        })}
+      {/* Brand mark */}
+      <View className="bg-brand rounded-md w-6 h-6 items-center justify-center">
+        <Text className="text-label-xs text-white font-bold">RW</Text>
       </View>
     </View>
   );

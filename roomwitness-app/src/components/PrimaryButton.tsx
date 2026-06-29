@@ -1,52 +1,58 @@
-import { ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Size = 'sm' | 'md' | 'lg';
+
+const VARIANT_STYLES: Record<Variant, { bg: string; text: string; border?: string }> = {
+  primary:   { bg: 'bg-brand',          text: 'text-white' },
+  secondary: { bg: 'bg-surface',        text: 'text-ink',   border: 'border border-line' },
+  ghost:     { bg: 'bg-transparent',    text: 'text-brand' },
+  danger:    { bg: 'bg-danger',         text: 'text-white' },
+};
+
+const SIZE_STYLES: Record<Size, { padding: string; text: string; radius: string; minH: number }> = {
+  sm: { padding: 'px-4 py-2.5',  text: 'text-btn-sm', radius: 'rounded-lg',  minH: 36 },
+  md: { padding: 'px-5 py-3.5',  text: 'text-btn',    radius: 'rounded-xl',  minH: 48 },
+  lg: { padding: 'px-6 py-4',    text: 'text-btn',    radius: 'rounded-xl',  minH: 56 },
+};
 
 export function PrimaryButton({
-  title,
-  onPress,
-  disabled = false,
-  loading = false,
-  variant = 'primary',
+  title, onPress, disabled = false, loading = false,
+  variant = 'primary', size = 'lg', fullWidth = true,
+  leftIcon, rightIcon,
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  variant?: 'primary' | 'outline';
+  variant?: Variant;
+  size?: Size;
+  fullWidth?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }) {
   const isDisabled = disabled || loading;
-
-  if (variant === 'outline') {
-    return (
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={isDisabled}
-        className={`rounded-lg px-6 py-4 items-center border-2 ${
-          isDisabled ? 'border-gray-200' : 'border-primary'
-        }`}
-        activeOpacity={0.75}
-        hitSlop={8}
-      >
-        <Text className={`font-bold text-base ${isDisabled ? 'text-gray-400' : 'text-primary'}`}>
-          {title}
-        </Text>
-      </TouchableOpacity>
-    );
-  }
+  const v = VARIANT_STYLES[variant];
+  const s = SIZE_STYLES[size];
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      className={`rounded-lg px-6 py-4 items-center flex-row justify-center gap-2 ${
-        isDisabled ? 'bg-gray-200' : 'bg-primary'
-      }`}
-      activeOpacity={0.8}
       hitSlop={8}
+      className={`
+        ${fullWidth ? 'w-full' : 'self-start'}
+        ${s.padding} ${s.radius} ${v.bg} ${v.border ?? ''}
+        flex-row items-center justify-center gap-2
+        ${isDisabled ? 'opacity-40' : 'active:opacity-80'}
+      `}
+      style={{ minHeight: s.minH }}
     >
-      {loading && <ActivityIndicator size="small" color="#FFFFFF" />}
-      <Text className={`font-bold text-base ${isDisabled ? 'text-gray-400' : 'text-white'}`}>
-        {title}
-      </Text>
-    </TouchableOpacity>
+      {loading
+        ? <ActivityIndicator size="small" color={variant === 'primary' || variant === 'danger' ? '#fff' : '#0057FF'} />
+        : leftIcon}
+      <Text className={`${s.text} ${v.text} font-semibold`}>{title}</Text>
+      {!loading && rightIcon}
+    </Pressable>
   );
 }

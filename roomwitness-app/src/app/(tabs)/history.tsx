@@ -3,142 +3,97 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Mock case history — in production this would come from local storage or a server
-const MOCK_CASES = [
-  {
-    id: 'RW-2026-001',
-    date: '28 Jun 2026',
-    items: ['สีผนัง', 'พื้น'],
-    totalClaimed: 8000,
-    unlawful: 5000,
-    verdict: 'UNLAWFUL' as const,
-  },
-  {
-    id: 'RW-2026-002',
-    date: '15 Jun 2026',
-    items: ['โซฟา', 'โต๊ะกาแฟ'],
-    totalClaimed: 30000,
-    unlawful: 18000,
-    verdict: 'DISPUTED' as const,
-  },
-  {
-    id: 'RW-2026-003',
-    date: '2 Jun 2026',
-    items: ['ทำความสะอาด'],
-    totalClaimed: 2000,
-    unlawful: 0,
-    verdict: 'LAWFUL' as const,
-  },
+const C = { bg: '#0C0A07', surface: '#181410', surface2: '#221C10', ink: '#FAF8F5', ink2: 'rgba(250,248,245,0.55)', ink3: 'rgba(250,248,245,0.30)', amber: '#F59E0B', amberSoft: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.14)', border2: 'rgba(250,248,245,0.06)', danger: '#F87171', dangerBg: 'rgba(248,113,113,0.10)', dangerBorder: 'rgba(248,113,113,0.25)', warn: '#FBBF24', warnBg: 'rgba(251,191,36,0.10)', ok: '#34D399', okBg: 'rgba(52,211,153,0.10)', okBorder: 'rgba(52,211,153,0.25)' };
+
+const CASES = [
+  { id: 'RW-2026-001', date: '28 Jun 2026', items: ['Wall paint', 'Floor scratch'], total: 8000, unlawful: 5000, verdict: 'UNLAWFUL' as const },
+  { id: 'RW-2026-002', date: '15 Jun 2026', items: ['Sofa', 'Coffee table'], total: 30000, unlawful: 18000, verdict: 'DISPUTED' as const },
+  { id: 'RW-2026-003', date: '2 Jun 2026', items: ['Deep cleaning'], total: 2000, unlawful: 0, verdict: 'LAWFUL' as const },
 ];
 
-const VERDICT_CONFIG = {
-  UNLAWFUL: { bg: 'bg-unlawful-soft', text: 'text-unlawful-dark', dot: 'bg-unlawful', label: 'ผิดกฎหมาย' },
-  DISPUTED: { bg: 'bg-disputed-soft', text: 'text-disputed-dark', dot: 'bg-disputed', label: 'โต้แย้งได้' },
-  LAWFUL:   { bg: 'bg-lawful-soft',   text: 'text-lawful-dark',   dot: 'bg-lawful',   label: 'ถูกกฎหมาย' },
-} as const;
+const VCFG = {
+  UNLAWFUL: { bg: 'rgba(248,113,113,0.10)', border: 'rgba(248,113,113,0.25)', text: '#F87171', dot: '#F87171', label: 'Unlawful' },
+  DISPUTED: { bg: 'rgba(251,191,36,0.10)',  border: 'rgba(251,191,36,0.25)',  text: '#FBBF24', dot: '#FBBF24', label: 'Disputed' },
+  LAWFUL:   { bg: 'rgba(52,211,153,0.10)',  border: 'rgba(52,211,153,0.25)',  text: '#34D399', dot: '#34D399', label: 'Lawful'   },
+};
 
 export default function HistoryScreen() {
-  const [query, setQuery] = useState('');
-
-  const filtered = MOCK_CASES.filter((c) => {
-    if (!query.trim()) return true;
-    const q = query.toLowerCase();
-    return c.id.toLowerCase().includes(q) || c.items.some((i) => i.toLowerCase().includes(q));
-  });
+  const [q, setQ] = useState('');
+  const filtered = CASES.filter(c => !q.trim() || c.id.toLowerCase().includes(q.toLowerCase()) || c.items.some(i => i.toLowerCase().includes(q.toLowerCase())));
 
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
-      {/* Header */}
-      <View className="px-4 pt-4 pb-2 bg-bg">
-        <Text className="text-3xl font-bold text-navy mb-3">Case History</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 16, backgroundColor: C.bg }}>
+        {/* Ambient glow */}
+        <View style={{ position: 'absolute', top: -30, right: -30, width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(245,158,11,0.04)' }} />
 
-        {/* Search bar */}
-        <View className="bg-bg-secondary rounded-xl flex-row items-center px-3 gap-2 border border-separator">
-          <Search size={16} color="#8E8E93" strokeWidth={2} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search by case ID or item..."
-            placeholderTextColor="#C7C7CC"
-            className="flex-1 py-3 text-navy text-sm"
-            clearButtonMode="never"
-          />
-          {query.length > 0 && (
-            <Pressable onPress={() => setQuery('')} hitSlop={8}>
-              <X size={14} color="#8E8E93" strokeWidth={2} />
+        <Text style={{ fontSize: 32, fontWeight: '900', color: C.ink, letterSpacing: -1.5, marginBottom: 16 }}>History</Text>
+
+        <View style={{ backgroundColor: C.surface, borderRadius: 16, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 10, borderWidth: 1, borderColor: C.border, height: 48 }}>
+          <Search size={16} color={C.ink3} strokeWidth={2} />
+          <TextInput value={q} onChangeText={setQ} placeholder="Search cases or items…" placeholderTextColor={C.ink3}
+            style={{ flex: 1, fontSize: 15, color: C.ink }} />
+          {q.length > 0 && (
+            <Pressable onPress={() => setQ('')} hitSlop={12}>
+              <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
+                <X size={10} color={C.ink3} strokeWidth={2.5} />
+              </View>
             </Pressable>
           )}
         </View>
       </View>
 
-      <ScrollView
-        className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
+        {/* Stats */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+          {[{ l: 'Total cases', v: CASES.length }, { l: 'Recovered', v: `฿${CASES.reduce((s,c)=>s+c.unlawful,0).toLocaleString()}` }].map((s, i) => (
+            <View key={i} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.border }}>
+              <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>{s.l}</Text>
+              <Text style={{ fontSize: 26, fontWeight: '900', color: C.amber, letterSpacing: -1 }}>{s.v}</Text>
+            </View>
+          ))}
+        </View>
+
         {filtered.length === 0 ? (
-          <View className="items-center justify-center py-16">
-            <Search size={40} color="#C7C7CC" strokeWidth={1.5} />
-            <Text className="text-label-secondary text-base font-semibold mt-4">No cases found</Text>
-            <Text className="text-label-tertiary text-sm mt-1">Try a different search term</Text>
+          <View style={{ alignItems: 'center', paddingVertical: 64 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border, marginBottom: 16 }}>
+              <Search size={28} color={C.ink3} strokeWidth={1.5} />
+            </View>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: C.ink, marginBottom: 6 }}>No cases found</Text>
+            <Text style={{ fontSize: 14, color: C.ink3 }}>Try a different search term</Text>
           </View>
         ) : (
-          filtered.map((c) => {
-            const cfg = VERDICT_CONFIG[c.verdict];
+          filtered.map(c => {
+            const v = VCFG[c.verdict];
             return (
-              <Pressable
-                key={c.id}
-                className="bg-bg-secondary rounded-2xl p-4 mb-3 border border-separator active:opacity-70"
-              >
-                {/* Top row */}
-                <View className="flex-row items-start justify-between mb-2">
+              <Pressable key={c.id} style={{ backgroundColor: C.surface, borderRadius: 20, padding: 18, marginBottom: 12, borderWidth: 1, borderColor: C.border }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <View>
-                    <Text className="text-navy font-bold text-sm">{c.id}</Text>
-                    <View className="flex-row items-center gap-1 mt-0.5">
-                      <Clock size={11} color="#8E8E93" strokeWidth={2} />
-                      <Text className="text-label-secondary text-xs">{c.date}</Text>
+                    <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>{c.id}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                      <Clock size={11} color={C.ink3} strokeWidth={2} />
+                      <Text style={{ fontSize: 12, color: C.ink3 }}>{c.date}</Text>
                     </View>
                   </View>
-                  <View className={`flex-row items-center gap-1.5 px-2.5 py-1 rounded-md ${cfg.bg}`}>
-                    <View className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                    <Text className={`text-xs font-bold ${cfg.text}`}>{cfg.label}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: v.bg, borderRadius: 999, borderWidth: 1, borderColor: v.border }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: v.dot }} />
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: v.text }}>{v.label}</Text>
                   </View>
                 </View>
-
-                {/* Items */}
-                <View className="flex-row flex-wrap gap-1.5 mb-3">
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
                   {c.items.map((item, i) => (
-                    <View key={i} className="bg-bg rounded-md px-2 py-0.5">
-                      <Text className="text-label-secondary text-xs">{item}</Text>
+                    <View key={i} style={{ backgroundColor: C.surface2, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: C.border2 }}>
+                      <Text style={{ fontSize: 12, color: C.ink2, fontWeight: '500' }}>{item}</Text>
                     </View>
                   ))}
                 </View>
-
-                {/* Amounts */}
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-label-secondary text-xs">
-                    ถูกหัก ฿{c.totalClaimed.toLocaleString()}
-                  </Text>
-                  {c.unlawful > 0 && (
-                    <Text className="text-unlawful text-xs font-semibold">
-                      ผิดกฎหมาย ฿{c.unlawful.toLocaleString()}
-                    </Text>
-                  )}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border2 }}>
+                  <Text style={{ fontSize: 13, color: C.ink2 }}>Charged: <Text style={{ fontWeight: '800', color: C.ink }}>฿{c.total.toLocaleString()}</Text></Text>
+                  {c.unlawful > 0 && <Text style={{ fontSize: 13, fontWeight: '800', color: C.ok }}>+฿{c.unlawful.toLocaleString()} recoverable</Text>}
                 </View>
               </Pressable>
             );
           })
-        )}
-
-        {/* Empty state hint */}
-        {MOCK_CASES.length === 0 && (
-          <View className="items-center py-16">
-            <Clock size={44} color="#C7C7CC" strokeWidth={1.25} />
-            <Text className="text-label-secondary text-base font-semibold mt-4">ยังไม่มีประวัติ</Text>
-            <Text className="text-label-tertiary text-sm mt-1 text-center">
-              เคสที่คุณวิเคราะห์จะแสดงที่นี่{'\n'}Your analyzed cases will appear here
-            </Text>
-          </View>
         )}
       </ScrollView>
     </SafeAreaView>

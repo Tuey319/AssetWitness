@@ -1,69 +1,67 @@
 import { router } from 'expo-router';
-import { CheckCircle } from 'lucide-react-native';
+import { CheckCircle2, RefreshCw } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Easing, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { NavHeader } from '@/components/NavHeader';
 import { analyze } from '@/lib/api';
 import { useStore } from '@/lib/store';
 
+const C = {
+  bg: '#0C0A07', surface: '#181410', surface2: '#221C10',
+  ink: '#FAF8F5', ink2: 'rgba(250,248,245,0.55)', ink3: 'rgba(250,248,245,0.30)',
+  amber: '#F59E0B', amberSoft: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.14)',
+  border2: 'rgba(250,248,245,0.06)', ok: '#34D399', danger: '#F87171',
+  blue: '#60A5FA', purple: '#C084FC',
+};
+
+// Only 3 steps — Agent 04 runs separately on /documents
 const STEPS = [
-  { label: 'เปรียบเทียบภาพถ่าย', sub: 'CV · Groq Llama-4-Scout' },
-  { label: 'ตรวจสอบสัญญา', sub: 'Contract Parser · Typhoon v2' },
-  { label: 'วิเคราะห์กฎหมาย', sub: 'Legal RAG · ChromaDB + ป.พ.พ.' },
-  { label: 'สรุปผลและเตรียมเอกสาร', sub: 'Document Generator' },
+  { label: 'Comparing photos',  sub: 'CV · Groq Llama-4-Scout',      color: C.blue   },
+  { label: 'Parsing contract',  sub: 'Contract · Typhoon v2',         color: C.purple },
+  { label: 'Applying Thai law', sub: 'Legal RAG · ป.พ.พ. + OCPB 2568', color: C.ok  },
 ];
 
-function Spinner() {
-  const rotation = useRef(new Animated.Value(0)).current;
-
+function RingSpinner({ color }: { color: string }) {
+  const rot = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.loop(
-      Animated.timing(rotation, {
-        toValue: 1,
-        duration: 900,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, [rotation]);
-
-  const rotate = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-
+    Animated.loop(Animated.timing(rot, { toValue: 1, duration: 750, easing: Easing.linear, useNativeDriver: true })).start();
+  }, [rot]);
   return (
-    <Animated.View style={{ transform: [{ rotate }] }}>
-      <View
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: 11,
-          borderWidth: 2.5,
-          borderColor: '#007AFF',
-          borderTopColor: 'transparent',
-        }}
-      />
+    <Animated.View style={{ transform: [{ rotate: rot.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
+      <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2.5, borderColor: color, borderTopColor: 'transparent' }} />
     </Animated.View>
   );
 }
 
 export default function AnalyzingScreen() {
-  const form = useStore((s) => s.form);
-  const setResult = useStore((s) => s.setResult);
-  const [currentStep, setCurrentStep] = useState(0);
+  const form      = useStore(s => s.form);
+  const setResult = useStore(s => s.setResult);
+  const [step, setStep]   = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  // Pulsing orb
+  const pulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulse, { toValue: 1.15, duration: 950, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 1, duration: 950, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+    ])).start();
+  }, [pulse]);
 
   useEffect(() => {
     if (!form) { router.replace('/'); return; }
 
-    const timers = STEPS.slice(0, -1).map((_, i) =>
-      setTimeout(() => setCurrentStep(i + 1), (i + 1) * 900)
-    );
+    // Advance step indicator every 4s while waiting
+    const timers = [
+      setTimeout(() => setStep(1), 4000),
+      setTimeout(() => setStep(2), 10000),
+    ];
 
     analyze(form)
-      .then((data) => { setResult(data); router.replace('/results'); })
+      .then(data => { setResult(data); router.replace('/results'); })
       .catch((err: Error) => {
-        setError(err.message || 'เกิดข้อผิดพลาด');
         timers.forEach(clearTimeout);
+        setError(err.message || 'Could not reach the server');
       });
 
     return () => timers.forEach(clearTimeout);
@@ -71,96 +69,93 @@ export default function AnalyzingScreen() {
 
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-bg">
-        <NavHeader step={2} label="กำลังวิเคราะห์" />
-        <View className="flex-1 items-center justify-center px-6">
-          <View className="bg-unlawful-soft rounded-xl p-5 w-full mb-6 border border-unlawful/20">
-            <Text className="text-unlawful-dark font-bold text-base text-center mb-1">
-              เกิดข้อผิดพลาด
-            </Text>
-            <Text className="text-unlawful text-sm text-center leading-5">{error}</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="bg-bg-secondary rounded-xl px-8 py-3.5 border border-separator"
-            activeOpacity={0.7}
-          >
-            <Text className="text-navy font-semibold">กลับ</Text>
-          </TouchableOpacity>
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
+        {/* Decorative orbs */}
+        <View style={{ position: 'absolute', top: 80, left: -60, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(248,113,113,0.04)' }} />
+        <View style={{ position: 'absolute', bottom: 100, right: -40, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(245,158,11,0.04)' }} />
+
+        <View style={{ backgroundColor: 'rgba(248,113,113,0.08)', borderRadius: 24, padding: 28, width: '100%', borderWidth: 1, borderColor: 'rgba(248,113,113,0.2)', marginBottom: 24, alignItems: 'center' }}>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: C.danger, marginBottom: 10, letterSpacing: -0.4 }}>Analysis failed</Text>
+          <Text style={{ fontSize: 14, color: 'rgba(248,113,113,0.8)', textAlign: 'center', lineHeight: 22 }}>{error}</Text>
+
+          {error.includes('server') && (
+            <View style={{ marginTop: 16, backgroundColor: C.surface2, borderRadius: 14, padding: 14, width: '100%', borderWidth: 1, borderColor: C.border }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: C.ink3, letterSpacing: 1, marginBottom: 8 }}>TROUBLESHOOTING</Text>
+              <Text style={{ fontSize: 12, color: C.ink2, lineHeight: 20 }}>
+                1. Make sure Express is running:{'\n'}
+                <Text style={{ color: C.amber, fontFamily: 'IBMPlexMono_500Medium' }}>  cd express-backend && npm run dev{'\n'}</Text>
+                2. Check your IP in roomwitness-app/.env{'\n'}
+                3. Or set EXPO_PUBLIC_USE_MOCK=true to demo
+              </Text>
+            </View>
+          )}
         </View>
+
+        <Pressable onPress={() => router.back()}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.surface, borderRadius: 16, paddingVertical: 15, paddingHorizontal: 28, borderWidth: 1, borderColor: C.border }}>
+          <RefreshCw size={16} color={C.ink2} strokeWidth={2} />
+          <Text style={{ fontSize: 15, color: C.ink, fontWeight: '700' }}>Go back &amp; retry</Text>
+        </Pressable>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <NavHeader step={2} label="กำลังวิเคราะห์" />
-      <View className="flex-1 justify-center px-6">
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
+        {/* Ambient glow orbs */}
+        <View style={{ position: 'absolute', top: 60, left: -80, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(245,158,11,0.04)' }} />
+        <View style={{ position: 'absolute', bottom: 80, right: -60, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(96,165,250,0.04)' }} />
 
-        {/* Hero */}
-        <View className="items-center mb-10">
-          <View className="w-16 h-16 rounded-full bg-primary-soft items-center justify-center mb-4">
-            <View className="w-8 h-8 rounded-full bg-primary items-center justify-center">
-              <View className="w-3 h-3 rounded-full bg-white" />
+        {/* Central orb */}
+        <View style={{ alignItems: 'center', marginBottom: 48 }}>
+          <Animated.View style={{ transform: [{ scale: pulse }] }}>
+            <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: C.amberSoft, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 68, height: 68, borderRadius: 34, backgroundColor: C.surface2, borderWidth: 1.5, borderColor: C.amber + '40', alignItems: 'center', justifyContent: 'center' }}>
+                <RingSpinner color={C.amber} />
+              </View>
             </View>
+          </Animated.View>
+
+          <View style={{ marginTop: 28, alignItems: 'center' }}>
+            <Text style={{ fontSize: 28, fontWeight: '900', color: C.ink, letterSpacing: -1 }}>Analyzing…</Text>
+            <Text style={{ fontSize: 15, color: C.ink2, marginTop: 6 }}>AI agents are reviewing your case</Text>
           </View>
-          <Text className="text-2xl font-bold text-navy text-center">กำลังวิเคราะห์...</Text>
-          <Text className="text-label-secondary text-base text-center mt-1">
-            Analyzing your evidence
-          </Text>
         </View>
 
         {/* Steps */}
-        <View className="gap-2.5">
-          {STEPS.map((step, i) => {
-            const done = i < currentStep;
-            const active = i === currentStep;
+        <View style={{ gap: 10 }}>
+          {STEPS.map((s, i) => {
+            const done   = i < step;
+            const active = i === step;
             return (
-              <View
-                key={i}
-                className={`flex-row items-center gap-3 p-4 rounded-xl border ${
-                  done
-                    ? 'bg-lawful-soft border-lawful/30'
+              <View key={i} style={{
+                flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 18,
+                backgroundColor: done ? (C.ok + '0D') : active ? C.amberSoft : C.surface,
+                borderWidth: 1,
+                borderColor: done ? (C.ok + '30') : active ? C.border : C.border2,
+                opacity: i > step ? 0.4 : 1,
+              }}>
+                <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: done ? (C.ok + '20') : active ? (s.color + '20') : C.surface2, alignItems: 'center', justifyContent: 'center' }}>
+                  {done
+                    ? <CheckCircle2 size={20} color={C.ok} strokeWidth={2} />
                     : active
-                    ? 'bg-primary-soft border-primary/30'
-                    : 'bg-bg-secondary border-separator'
-                }`}
-              >
-                {/* Status icon */}
-                <View className="w-8 h-8 items-center justify-center">
-                  {done ? (
-                    <CheckCircle size={22} color="#34C759" strokeWidth={2} />
-                  ) : active ? (
-                    <Spinner />
-                  ) : (
-                    <View className="w-6 h-6 rounded-full border-2 border-separator-opaque" />
-                  )}
+                    ? <RingSpinner color={s.color} />
+                    : <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.border }} />}
                 </View>
-
-                <View className="flex-1">
-                  <Text
-                    className={`font-semibold text-sm ${
-                      done ? 'text-lawful-dark' : active ? 'text-primary' : 'text-label-tertiary'
-                    }`}
-                  >
-                    {step.label}
-                  </Text>
-                  <Text className="text-label-tertiary text-xs mt-0.5">{step.sub}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: done ? C.ok : active ? C.ink : C.ink3 }}>{s.label}</Text>
+                  <Text style={{ fontSize: 11, color: C.ink3, marginTop: 1 }}>{s.sub}</Text>
                 </View>
-
-                {done && (
-                  <Text className="text-lawful text-xs font-semibold">เสร็จแล้ว</Text>
-                )}
-                {active && (
-                  <Text className="text-primary text-xs font-semibold">กำลังทำ...</Text>
-                )}
+                {done   && <Text style={{ fontSize: 12, color: C.ok, fontWeight: '700' }}>Done</Text>}
+                {active && <Text style={{ fontSize: 12, color: C.amber, fontWeight: '700' }}>Running…</Text>}
               </View>
             );
           })}
         </View>
 
-        <Text className="text-label-tertiary text-xs text-center mt-8">
-          ใช้เวลาประมาณ 30–90 วินาที · Takes about 30–90 seconds
+        <Text style={{ fontSize: 12, color: C.ink3, textAlign: 'center', marginTop: 28 }}>
+          Usually takes 30–90 seconds · ใช้เวลาประมาณ 1 นาที
         </Text>
       </View>
     </SafeAreaView>

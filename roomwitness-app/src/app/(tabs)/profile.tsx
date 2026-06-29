@@ -1,167 +1,100 @@
-import { ChevronRight, Globe, HelpCircle, Info, Moon, Scale, Shield } from 'lucide-react-native';
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { ChevronRight, Globe, Info, Scale, Shield, Zap } from 'lucide-react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
 
-function SettingsRow({
-  icon: Icon,
-  iconColor = '#007AFF',
-  label,
-  subtitle,
-  onPress,
-  rightElement,
-}: {
-  icon: typeof ChevronRight;
-  iconColor?: string;
-  label: string;
-  subtitle?: string;
-  onPress?: () => void;
-  rightElement?: React.ReactNode;
-}) {
+const C = { bg: '#0C0A07', surface: '#181410', surface2: '#221C10', ink: '#FAF8F5', ink2: 'rgba(250,248,245,0.55)', ink3: 'rgba(250,248,245,0.30)', amber: '#F59E0B', amberSoft: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.14)', border2: 'rgba(250,248,245,0.06)', blue: '#60A5FA', ok: '#34D399', purple: '#C084FC', warn: '#FBBF24' };
+
+function Row({ icon: Icon, iconColor, label, sub, onPress }: { icon: any; iconColor: string; label: string; sub?: string; onPress?: () => void }) {
   return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row items-center px-4 py-3 active:bg-bg"
-    >
-      <View
-        className="w-8 h-8 rounded-lg items-center justify-center mr-3"
-        style={{ backgroundColor: `${iconColor}18` }}
-      >
-        <Icon size={17} color={iconColor} strokeWidth={1.75} />
+    <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 15, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: C.border2 }}>
+      <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: iconColor + '18', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: iconColor + '25' }}>
+        <Icon size={15} color={iconColor} strokeWidth={2} />
       </View>
-      <View className="flex-1">
-        <Text className="text-navy text-sm font-medium">{label}</Text>
-        {subtitle && <Text className="text-label-secondary text-xs mt-0.5">{subtitle}</Text>}
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: C.ink }}>{label}</Text>
+        {sub && <Text style={{ fontSize: 11, color: C.ink3, marginTop: 1 }}>{sub}</Text>}
       </View>
-      {rightElement ?? <ChevronRight size={16} color="#C7C7CC" strokeWidth={2} />}
+      <ChevronRight size={15} color={C.ink3} strokeWidth={2} />
     </Pressable>
   );
 }
 
-function SettingsGroup({ title, children }: { title?: string; children: React.ReactNode }) {
-  return (
-    <View className="mb-4">
-      {title && (
-        <Text className="text-label-secondary text-xs font-semibold uppercase tracking-wider px-4 mb-1">
-          {title}
-        </Text>
-      )}
-      <View className="bg-bg-secondary rounded-2xl overflow-hidden divide-y divide-separator-opaque">
-        {children}
-      </View>
-    </View>
-  );
-}
-
 export default function ProfileScreen() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [thaiLang, setThaiLang] = useState(true);
-
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={['top']}>
-      <ScrollView
-        className="flex-1 px-4"
-        contentContainerStyle={{ paddingTop: 16, paddingBottom: 60 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text className="text-3xl font-bold text-navy mb-6">Profile</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
+        {/* Hero */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 28, position: 'relative', overflow: 'hidden' }}>
+          <View style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(245,158,11,0.05)' }} />
+          <View style={{ position: 'absolute', bottom: -20, left: 20, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(96,165,250,0.04)' }} />
 
-        {/* Avatar card */}
-        <View className="bg-bg-secondary rounded-2xl p-4 mb-6 flex-row items-center gap-4">
-          <View className="w-14 h-14 rounded-full bg-primary items-center justify-center">
-            <Text className="text-white text-xl font-bold">ผ</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+            <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: '#0C0A07' }}>ผ</Text>
+            </View>
+            <View>
+              <Text style={{ fontSize: 20, fontWeight: '900', color: C.ink, letterSpacing: -0.5 }}>ผู้ใช้งาน</Text>
+              <Text style={{ fontSize: 12, color: C.ink3 }}>RoomWitness User</Text>
+            </View>
           </View>
-          <View className="flex-1">
-            <Text className="text-navy font-bold text-base">ผู้ใช้งาน</Text>
-            <Text className="text-label-secondary text-sm">RoomWitness User</Text>
-          </View>
-          <View className="bg-lawful-soft rounded-lg px-2.5 py-1">
-            <Text className="text-lawful-dark text-xs font-bold">Free</Text>
+
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            {[{ v: '3', l: 'Cases' }, { v: '฿23k', l: 'Recovered' }, { v: '98%', l: 'Won' }].map((s, i) => (
+              <View key={i} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: C.border }}>
+                <Text style={{ fontSize: 22, fontWeight: '900', color: C.amber, letterSpacing: -0.5 }}>{s.v}</Text>
+                <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '600', marginTop: 2 }}>{s.l}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
-        {/* Legal sources */}
-        <SettingsGroup title="Legal sources">
-          <SettingsRow
-            icon={Scale}
-            iconColor="#007AFF"
-            label="Civil & Commercial Code"
-            subtitle="§§ 546–563 · Hire of Property"
-          />
-          <SettingsRow
-            icon={Shield}
-            iconColor="#34C759"
-            label="OCPB Notification B.E. 2568"
-            subtitle="Consumer protection · eff. 4 Sep 2025"
-          />
-        </SettingsGroup>
+        {/* Legal database */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+          <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Legal database</Text>
+          <View style={{ backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, overflow: 'hidden' }}>
+            <Row icon={Scale} iconColor={C.blue} label="Civil & Commercial Code" sub="§§ 546–563 · Hire of Property" />
+            <Row icon={Shield} iconColor={C.ok} label="OCPB Notification B.E. 2568" sub="Consumer protection · eff. 4 Sep 2025" />
+          </View>
+        </View>
 
-        {/* Preferences */}
-        <SettingsGroup title="Preferences">
-          <SettingsRow
-            icon={Moon}
-            iconColor="#5856D6"
-            label="Dark mode"
-            subtitle="Coming soon"
-            rightElement={
-              <Switch
-                value={darkMode}
-                onValueChange={setDarkMode}
-                trackColor={{ false: '#E5E5EA', true: '#34C759' }}
-                disabled
-              />
-            }
-          />
-          <SettingsRow
-            icon={Globe}
-            iconColor="#FF9500"
-            label="Primary language"
-            subtitle={thaiLang ? 'ภาษาไทย + English' : 'English only'}
-            rightElement={
-              <Switch
-                value={thaiLang}
-                onValueChange={setThaiLang}
-                trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
-              />
-            }
-          />
-        </SettingsGroup>
+        {/* AI pipeline */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+          <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>AI pipeline</Text>
+          <View style={{ backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, overflow: 'hidden' }}>
+            {[
+              { n: '01', l: 'CV · Groq Llama-4-Scout',     s: 'Photo damage comparison',   c: C.blue   },
+              { n: '02', l: 'Contract · Typhoon v2',        s: 'Lease clause analysis',     c: C.purple },
+              { n: '03', l: 'Legal RAG · ChromaDB',         s: 'ป.พ.พ. §546-563 + OCPB 2568', c: C.ok  },
+              { n: '04', l: 'Docs · ReportLab',             s: 'Thai legal PDF generation', c: C.amber  },
+            ].map((a, i) => (
+              <View key={a.n} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 15, paddingHorizontal: 20, borderBottomWidth: i < 3 ? 1 : 0, borderBottomColor: C.border2 }}>
+                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: a.c + '18', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: a.c + '30' }}>
+                  <Text style={{ fontSize: 10, fontWeight: '900', color: a.c }}>{a.n}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: C.ink }}>{a.l}</Text>
+                  <Text style={{ fontSize: 11, color: C.ink3 }}>{a.s}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
 
         {/* About */}
-        <SettingsGroup title="About">
-          <SettingsRow
-            icon={Info}
-            iconColor="#8E8E93"
-            label="RoomWitness"
-            subtitle="BDI Bangkok Hackathon 2026 · v1.0"
-          />
-          <SettingsRow
-            icon={HelpCircle}
-            iconColor="#007AFF"
-            label="How it works"
-            subtitle="4-agent AI pipeline"
-          />
-        </SettingsGroup>
+        <View style={{ paddingHorizontal: 20, marginBottom: 28 }}>
+          <View style={{ backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, overflow: 'hidden' }}>
+            <Row icon={Zap} iconColor={C.warn} label="About RoomWitness" sub="BDI Bangkok Hackathon 2026 · v1.0" />
+            <Row icon={Globe} iconColor={C.ok} label="OCPB Complaint Portal" sub="ocpb.go.th · call 1166" />
+            <Row icon={Info} iconColor={C.blue} label="How it works" sub="4-agent AI pipeline · Thai law RAG" />
+          </View>
+        </View>
 
-        {/* Pipeline info */}
-        <View className="bg-navy rounded-2xl p-4 mt-2">
-          <Text className="text-white font-bold text-sm mb-3">AI Pipeline</Text>
-          {[
-            { n: '01', label: 'CV · Groq Llama-4-Scout', sub: 'Photo damage comparison' },
-            { n: '02', label: 'Contract · Typhoon v2', sub: 'Lease clause analysis' },
-            { n: '03', label: 'Legal · ChromaDB RAG', sub: 'ป.พ.พ. + สคบ. 2568' },
-            { n: '04', label: 'Docs · ReportLab', sub: 'Thai legal PDF generation' },
-          ].map((step) => (
-            <View key={step.n} className="flex-row items-center gap-3 mb-2">
-              <View className="w-7 h-7 rounded-lg bg-white/10 items-center justify-center">
-                <Text className="text-white text-xs font-bold">{step.n}</Text>
-              </View>
-              <View>
-                <Text className="text-white text-xs font-semibold">{step.label}</Text>
-                <Text className="text-white/50 text-xs">{step.sub}</Text>
-              </View>
-            </View>
-          ))}
+        <View style={{ alignItems: 'center', gap: 4 }}>
+          <Text style={{ fontSize: 11, color: C.ink3 }}>BDI Bangkok Hackathon 2026</Text>
+          <Text style={{ fontSize: 11, color: C.ink3 }}>Team: KP · Beam · Tuey</Text>
+          <View style={{ marginTop: 6, backgroundColor: C.amberSoft, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: C.border }}>
+            <Text style={{ fontSize: 10, color: C.amber, fontWeight: '700' }}>Powered by Thai Law AI</Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

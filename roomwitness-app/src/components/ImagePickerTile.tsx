@@ -1,60 +1,45 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, ImagePlus } from 'lucide-react-native';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 
 export function ImagePickerTile({
-  label,
-  sublabel,
-  onPick,
-  uri,
-  multiple = false,
-  compact = false,
+  label, sublabel, onPick, uri, multiple = false,
 }: {
-  label: string;
-  sublabel: string;
+  label: string; sublabel: string;
   onPick: (uri: string) => void;
-  uri?: string;
-  multiple?: boolean;
-  compact?: boolean;
+  uri?: string; multiple?: boolean;
 }) {
   async function pick() {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: multiple,
-      quality: 0.85,
+      mediaTypes: ['images'], allowsMultipleSelection: multiple, quality: 0.85,
     });
-    if (!result.canceled && result.assets.length > 0) {
-      result.assets.forEach((a) => onPick(a.uri));
-    }
+    if (!result.canceled) result.assets.forEach((a) => onPick(a.uri));
   }
 
-  const height = compact ? 'min-h-[90px]' : 'min-h-[110px]';
-
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={pick}
-      className={`border-2 border-dashed border-border rounded-lg items-center justify-center ${height} bg-surface-bg overflow-hidden`}
-      activeOpacity={0.7}
-      hitSlop={4}
+      className="border border-dashed border-line rounded-xl overflow-hidden bg-canvas active:bg-surface-3"
+      style={{ minHeight: 100 }}
     >
       {uri ? (
-        <View className="w-full h-full relative">
-          <Image source={{ uri }} className="w-full h-28 rounded-md" resizeMode="cover" />
-          <View className="absolute bottom-1 right-1 bg-primary rounded-md px-2 py-0.5">
-            <Text className="text-white text-xs font-semibold">เปลี่ยน</Text>
+        <View className="relative">
+          <Image source={{ uri }} className="w-full" style={{ height: 120 }} resizeMode="cover" />
+          <View className="absolute bottom-2 right-2 bg-brand rounded-lg px-2.5 py-1">
+            <Text className="text-label text-white font-semibold">Change</Text>
           </View>
         </View>
       ) : (
-        <View className="items-center gap-1 p-3">
-          {multiple ? (
-            <ImagePlus size={22} color="#8FA3B8" strokeWidth={1.5} />
-          ) : (
-            <Camera size={22} color="#8FA3B8" strokeWidth={1.5} />
-          )}
-          <Text className="text-text-primary font-semibold text-sm text-center">{label}</Text>
-          <Text className="text-text-muted text-xs text-center">{sublabel}</Text>
+        <View className="flex-1 items-center justify-center gap-2 py-6">
+          {multiple
+            ? <ImagePlus size={24} color="#A1A1AA" strokeWidth={1.5} />
+            : <Camera size={24} color="#A1A1AA" strokeWidth={1.5} />}
+          <View className="items-center">
+            <Text className="text-body-sm text-ink font-medium">{label}</Text>
+            <Text className="text-label text-ink-3 mt-0.5">{sublabel}</Text>
+          </View>
         </View>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
