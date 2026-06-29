@@ -5,14 +5,7 @@ import { Animated, Easing, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { analyze } from '@/lib/api';
 import { useStore } from '@/lib/store';
-
-const C = {
-  bg: '#0C0A07', surface: '#181410', surface2: '#221C10',
-  ink: '#FAF8F5', ink2: 'rgba(250,248,245,0.55)', ink3: 'rgba(250,248,245,0.30)',
-  amber: '#F59E0B', amberSoft: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.14)',
-  border2: 'rgba(250,248,245,0.06)', ok: '#34D399', danger: '#F87171',
-  blue: '#60A5FA', purple: '#C084FC',
-};
+import { getColors } from '@/lib/theme';
 
 // Only 3 steps — Agent 04 runs separately on /documents
 const STEPS = [
@@ -36,6 +29,8 @@ function RingSpinner({ color }: { color: string }) {
 export default function AnalyzingScreen() {
   const form      = useStore(s => s.form);
   const setResult = useStore(s => s.setResult);
+  const theme     = useStore(s => s.theme);
+  const C         = getColors(theme);
   const [step, setStep]   = useState(0);
   const [error, setError] = useState<string | null>(null);
 

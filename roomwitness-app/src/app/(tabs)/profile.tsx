@@ -1,10 +1,208 @@
-import { ChevronRight, Globe, Info, Scale, Shield, Zap } from 'lucide-react-native';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ExternalLink, ChevronRight, Globe, Info, Moon, Save, Sun, User, Zap } from 'lucide-react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Alert, Animated, Easing, Pressable, ScrollView,
+  Switch, Text, TextInput, View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getColors } from '@/lib/theme';
+import { useStore } from '@/lib/store';
 
-const C = { bg: '#0C0A07', surface: '#181410', surface2: '#221C10', ink: '#FAF8F5', ink2: 'rgba(250,248,245,0.55)', ink3: 'rgba(250,248,245,0.30)', amber: '#F59E0B', amberSoft: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.14)', border2: 'rgba(250,248,245,0.06)', blue: '#60A5FA', ok: '#34D399', purple: '#C084FC', warn: '#FBBF24' };
+// ─── AI Pipeline data ────────────────────────────────────────────────
+const AGENTS = [
+  {
+    id:       '01',
+    name:     'CV Damage Assessment',
+    model:    'meta-llama/llama-4-scout-17b-16e-instruct',
+    provider: 'Groq Cloud',
+    type:     'Vision + Text',
+    context:  '128K tokens',
+    latency:  '2.3s avg',
+    color:    '#60A5FA',
+    status:   'online' as const,
+    calls:    142,
+    desc:     'Compares move-in vs move-out photos using multi-image reasoning. Detects change type: PRE_EXISTING, NORMAL_WEAR, UNCHANGED, NEW_DAMAGE.',
+    tags:     ['Vision', 'Groq', 'Llama-4'],
+  },
+  {
+    id:       '02',
+    name:     'Contract Parser',
+    model:    'typhoon-v2.5-30b-a3b-instruct',
+    provider: 'OpenTyphoon',
+    type:     'Thai legal text',
+    context:  '8K tokens',
+    latency:  '8.1s avg',
+    color:    '#C084FC',
+    status:   'online' as const,
+    calls:    138,
+    desc:     'Extracts liability_map, contract_summary, and unfair_clauses from Thai lease PDFs. Detects OCPB 2568 violations and void clauses.',
+    tags:     ['Thai NLP', 'Typhoon', 'Legal'],
+  },
+  {
+    id:       '03',
+    name:     'Legal Reasoning RAG',
+    model:    'typhoon-v2.5-30b-a3b-instruct + ChromaDB',
+    provider: 'OpenTyphoon + Local',
+    type:     'RAG · 21 law chunks',
+    context:  'Top-3 retrieval',
+    latency:  '6.2s avg',
+    color:    '#34D399',
+    status:   'online' as const,
+    calls:    274,
+    desc:     'Retrieves relevant Thai law via ChromaDB semantic search, then reasons per-claim verdict: LAWFUL / DISPUTED / UNLAWFUL. Cites ป.พ.พ. §546–563 + OCPB 2568.',
+    tags:     ['RAG', 'ChromaDB', 'ONNX embed'],
+  },
+  {
+    id:       '04',
+    name:     'Document Generator',
+    model:    'typhoon-v2.5-30b-a3b-instruct + ReportLab',
+    provider: 'OpenTyphoon + Python',
+    type:     'Thai PDF · 3 doc types',
+    context:  'Platypus layout engine',
+    latency:  '4.1s avg',
+    color:    '#F59E0B',
+    status:   'online' as const,
+    calls:    127,
+    desc:     'Generates OCPB complaint, deposit demand letter, and evidence summary as Thai-language PDFs using ReportLab Platypus with Leelawadee font.',
+    tags:     ['ReportLab', 'Thai PDF', 'Leelawadee'],
+  },
+];
 
-function Row({ icon: Icon, iconColor, label, sub, onPress }: { icon: any; iconColor: string; label: string; sub?: string; onPress?: () => void }) {
+const LEGAL_DB = [
+  {
+    title:   'Civil & Commercial Code',
+    detail:  '§§ 546–563 · Hire of Property',
+    chunks:  11,
+    color:   '#60A5FA',
+    sources: [
+      { label: 'Thailand Law Library §537–545', url: 'https://library.siam-legal.com/thai-law/civil-and-commercial-code-exchange-section-537-545/' },
+      { label: 'Thailand Law Library §552–563', url: 'https://library.siam-legal.com/thai-law/civil-and-commercial-code-exchange-section-552-563/' },
+      { label: 'Thailand Law Online Overview',  url: 'https://www.thailandlawonline.com/civil-and-commercial-code/537-571-lease-or-hire-of-property-laws' },
+    ],
+  },
+  {
+    title:   'OCPB Notification B.E. 2568',
+    detail:  'Consumer protection · eff. 4 Sep 2025',
+    chunks:  10,
+    color:   '#34D399',
+    sources: [
+      { label: 'OCPB Official Announcement',      url: 'https://www.ocpb.go.th/news_view.php?nid=17156' },
+      { label: 'Lex Nova — Plain-English Summary', url: 'https://lexnovapartners.com/residential-lease-contracts/' },
+      { label: 'Formichella & Sritawat Analysis', url: 'https://fosrlaw.com/2025/thailand-residential-leasing-regulations-2025/' },
+      { label: 'Landager — Deposit Rules',        url: 'https://landager.com/en/property-compliance/thailand/national/security-deposits' },
+    ],
+  },
+];
+
+// ─── Pulse dot for "online" status ───────────────────────────────────
+function PulseDot({ color }: { color: string }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(Animated.parallel([
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.8, duration: 900, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.2, duration: 900, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ]),
+    ])).start();
+  }, []);
+  return (
+    <View style={{ width: 10, height: 10, alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View style={{ position: 'absolute', width: 10, height: 10, borderRadius: 5, backgroundColor: color, opacity, transform: [{ scale }] }} />
+      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />
+    </View>
+  );
+}
+
+// ─── Expandable agent card ────────────────────────────────────────────
+function AgentCard({ agent, C }: { agent: typeof AGENTS[0]; C: ReturnType<typeof getColors> }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <Pressable onPress={() => setExpanded(v => !v)} style={{ backgroundColor: C.surface2, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: agent.color + '22' }}>
+      {/* Header row */}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: agent.color + '18', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: agent.color + '30' }}>
+          <Text style={{ fontSize: 12, fontWeight: '900', color: agent.color }}>{agent.id}</Text>
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+            <Text style={{ fontSize: 14, fontWeight: '800', color: C.ink }}>{agent.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: agent.color + '14', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999 }}>
+              <PulseDot color={agent.color} />
+              <Text style={{ fontSize: 9, fontWeight: '700', color: agent.color, letterSpacing: 0.5 }}>ONLINE</Text>
+            </View>
+          </View>
+
+          {/* Model name — monospace */}
+          <Text style={{ fontSize: 10, color: agent.color, fontFamily: 'IBMPlexMono_500Medium', marginBottom: 6 }} numberOfLines={1}>
+            {agent.model}
+          </Text>
+
+          {/* Metric pills */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
+            {[
+              { l: agent.provider },
+              { l: agent.context },
+              { l: agent.latency },
+              { l: `${agent.calls} calls` },
+            ].map((m, i) => (
+              <View key={i} style={{ backgroundColor: C.surface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: C.border2 }}>
+                <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '600' }}>{m.l}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      {/* Expanded detail */}
+      {expanded && (
+        <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.border2, gap: 10 }}>
+          <Text style={{ fontSize: 13, color: C.ink2, lineHeight: 20 }}>{agent.desc}</Text>
+
+          <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
+            {agent.tags.map(t => (
+              <View key={t} style={{ backgroundColor: agent.color + '14', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: agent.color + '25' }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: agent.color }}>{t}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Mini stats row */}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {[
+              { label: 'Type', value: agent.type },
+              { label: 'Calls', value: String(agent.calls) },
+            ].map(s => (
+              <View key={s.label} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: C.border2 }}>
+                <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 0.5, marginBottom: 3 }}>{s.label.toUpperCase()}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }}>{s.value}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Expand hint */}
+      <View style={{ position: 'absolute', bottom: 14, right: 16 }}>
+        <Text style={{ fontSize: 11, color: C.ink3 }}>{expanded ? '▲' : '▼'}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+// ─── Settings row ─────────────────────────────────────────────────────
+function SettingsRow({ icon: Icon, iconColor, label, sub, onPress, right }: {
+  icon: any; iconColor: string; label: string; sub?: string;
+  onPress?: () => void; right?: React.ReactNode;
+}) {
+  const C = getColors(useStore(s => s.theme));
   return (
     <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 15, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: C.border2 }}>
       <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: iconColor + '18', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: iconColor + '25' }}>
@@ -14,84 +212,185 @@ function Row({ icon: Icon, iconColor, label, sub, onPress }: { icon: any; iconCo
         <Text style={{ fontSize: 15, fontWeight: '600', color: C.ink }}>{label}</Text>
         {sub && <Text style={{ fontSize: 11, color: C.ink3, marginTop: 1 }}>{sub}</Text>}
       </View>
-      <ChevronRight size={15} color={C.ink3} strokeWidth={2} />
+      {right ?? <ChevronRight size={15} color={C.ink3} strokeWidth={2} />}
     </Pressable>
   );
 }
 
+// ─── Screen ───────────────────────────────────────────────────────────
 export default function ProfileScreen() {
+  const theme       = useStore(s => s.theme);
+  const toggleTheme = useStore(s => s.toggleTheme);
+  const profile     = useStore(s => s.profile);
+  const setProfile  = useStore(s => s.setProfile);
+  const C           = getColors(theme);
+  const isDark      = theme === 'dark';
+
+  const [editing, setEditing] = useState(false);
+  const [nameTh, setNameTh]   = useState(profile.nameTh);
+  const [nameEn, setNameEn]   = useState(profile.nameEn);
+  const [phone, setPhone]     = useState(profile.phone);
+  const [language, setLang]   = useState<'th' | 'en'>(profile.language);
+
+  function save() {
+    setProfile({ nameTh, nameEn, phone, language });
+    setEditing(false);
+    Alert.alert('Saved ✓', 'Profile updated.');
+  }
+
+  const totalCalls = AGENTS.reduce((s, a) => s + a.calls, 0);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
-        {/* Hero */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 28, position: 'relative', overflow: 'hidden' }}>
-          <View style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(245,158,11,0.05)' }} />
-          <View style={{ position: 'absolute', bottom: -20, left: 20, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(96,165,250,0.04)' }} />
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-            <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 22, fontWeight: '900', color: '#0C0A07' }}>ผ</Text>
-            </View>
-            <View>
-              <Text style={{ fontSize: 20, fontWeight: '900', color: C.ink, letterSpacing: -0.5 }}>ผู้ใช้งาน</Text>
-              <Text style={{ fontSize: 12, color: C.ink3 }}>RoomWitness User</Text>
-            </View>
-          </View>
+        {/* ── Profile card ──────────────────────────── */}
+        <View style={{ backgroundColor: C.surface, marginHorizontal: 20, marginTop: 24, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: C.border, marginBottom: 24, overflow: 'hidden', position: 'relative' }}>
+          <View style={{ position: 'absolute', top: -30, right: -30, width: 130, height: 130, borderRadius: 65, backgroundColor: C.amberGlow }} />
 
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {[{ v: '3', l: 'Cases' }, { v: '฿23k', l: 'Recovered' }, { v: '98%', l: 'Won' }].map((s, i) => (
-              <View key={i} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: C.border }}>
-                <Text style={{ fontSize: 22, fontWeight: '900', color: C.amber, letterSpacing: -0.5 }}>{s.v}</Text>
-                <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '600', marginTop: 2 }}>{s.l}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: editing ? 16 : 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+              <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center' }}>
+                {profile.nameTh
+                  ? <Text style={{ fontSize: 20, fontWeight: '900', color: '#0C0A07' }}>{profile.nameTh.charAt(0)}</Text>
+                  : <User size={22} color="#0C0A07" strokeWidth={2.5} />}
               </View>
-            ))}
+              <View>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: C.ink }}>{profile.nameTh || 'Your Name'}</Text>
+                <Text style={{ fontSize: 12, color: C.ink3 }}>{profile.nameEn || 'Tap Edit to set up'}</Text>
+                {profile.phone ? <Text style={{ fontSize: 11, color: C.ink3 }}>{profile.phone}</Text> : null}
+              </View>
+            </View>
+            <Pressable
+              onPress={() => editing ? save() : setEditing(true)}
+              style={{ backgroundColor: editing ? C.amber : C.amberSoft, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', gap: 5 }}
+            >
+              {editing && <Save size={12} color="#0C0A07" strokeWidth={2.5} />}
+              <Text style={{ fontSize: 12, color: editing ? '#0C0A07' : C.amber, fontWeight: '700' }}>{editing ? 'Save' : 'Edit'}</Text>
+            </Pressable>
           </View>
+
+          {editing ? (
+            <View style={{ gap: 8 }}>
+              {[
+                { label: 'Name (Thai)', value: nameTh, set: setNameTh, ph: 'สมชาย ใจดี' },
+                { label: 'Name (English)', value: nameEn, set: setNameEn, ph: 'Somchai Jaidee' },
+                { label: 'Phone', value: phone, set: setPhone, ph: '08-1234-5678' },
+              ].map(f => (
+                <View key={f.label}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink3, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 5 }}>{f.label}</Text>
+                  <TextInput value={f.value} onChangeText={f.set} placeholder={f.ph} placeholderTextColor={C.ink3}
+                    style={{ backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: C.ink }} />
+                </View>
+              ))}
+              <Pressable onPress={() => setEditing(false)} style={{ alignItems: 'center', paddingVertical: 8 }}>
+                <Text style={{ fontSize: 13, color: C.ink3 }}>Cancel</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {[{ v: '3', l: 'Cases' }, { v: '฿23k', l: 'Recovered' }, { v: '98%', l: 'Won' }].map((s, i) => (
+                <View key={i} style={{ flex: 1, backgroundColor: C.surface2, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: C.border2 }}>
+                  <Text style={{ fontSize: 20, fontWeight: '900', color: C.amber }}>{s.v}</Text>
+                  <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '600', marginTop: 2 }}>{s.l}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
-        {/* Legal database */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
-          <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Legal database</Text>
-          <View style={{ backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, overflow: 'hidden' }}>
-            <Row icon={Scale} iconColor={C.blue} label="Civil & Commercial Code" sub="§§ 546–563 · Hire of Property" />
-            <Row icon={Shield} iconColor={C.ok} label="OCPB Notification B.E. 2568" sub="Consumer protection · eff. 4 Sep 2025" />
-          </View>
+        {/* ── Appearance ────────────────────────────── */}
+        <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10, paddingHorizontal: 20 }}>Appearance</Text>
+        <View style={{ backgroundColor: C.surface, borderRadius: 20, marginHorizontal: 20, borderWidth: 1, borderColor: C.border, overflow: 'hidden', marginBottom: 24 }}>
+          <SettingsRow icon={isDark ? Moon : Sun} iconColor={C.amber}
+            label={isDark ? 'Dark mode' : 'Light mode'}
+            sub={isDark ? 'Warm dark amber theme' : 'Clean light theme'}
+            right={<Switch value={isDark} onValueChange={toggleTheme} trackColor={{ false: C.border2, true: C.amber }} thumbColor={isDark ? '#0C0A07' : '#fff'} />}
+          />
+          <SettingsRow icon={Globe} iconColor={C.blue} label="Language"
+            sub={language === 'th' ? 'ภาษาไทย + English' : 'English only'}
+            right={
+              <Pressable onPress={() => { const n = language === 'th' ? 'en' : 'th'; setLang(n); setProfile({ language: n }); }}
+                style={{ backgroundColor: C.blueBg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: C.blue + '30' }}>
+                <Text style={{ fontSize: 12, color: C.blue, fontWeight: '700' }}>{language === 'th' ? 'TH + EN' : 'EN only'}</Text>
+              </Pressable>
+            }
+          />
         </View>
 
-        {/* AI pipeline */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
-          <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>AI pipeline</Text>
-          <View style={{ backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, overflow: 'hidden' }}>
+        {/* ── Legal database ────────────────────────── */}
+        <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10, paddingHorizontal: 20 }}>Legal database</Text>
+        <View style={{ marginHorizontal: 20, marginBottom: 24, gap: 8 }}>
+          {LEGAL_DB.map(db => (
+            <View key={db.title} style={{ backgroundColor: C.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: db.color + '22' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                  <PulseDot color={db.color} />
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: C.ink, flex: 1 }}>{db.title}</Text>
+                </View>
+                <View style={{ backgroundColor: db.color + '14', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: db.color }}>{db.chunks} chunks</Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: 12, color: C.ink3, marginBottom: 12 }}>{db.detail}</Text>
+              {/* Source links */}
+              <View style={{ gap: 6 }}>
+                {db.sources.map(s => (
+                  <Pressable
+                    key={s.url}
+                    onPress={() => WebBrowser.openBrowserAsync(s.url)}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: db.color + '0A', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: db.color + '18' }}
+                  >
+                    <ExternalLink size={11} color={db.color} strokeWidth={2} />
+                    <Text style={{ fontSize: 11, color: db.color, fontWeight: '600', flex: 1 }} numberOfLines={1}>{s.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* ── AI Pipeline ───────────────────────────── */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' }}>AI Pipeline</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.surface, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: C.border }}>
+                <PulseDot color={C.ok} />
+                <Text style={{ fontSize: 10, fontWeight: '700', color: C.ok }}>All systems online</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* System metrics strip */}
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
             {[
-              { n: '01', l: 'CV · Groq Llama-4-Scout',     s: 'Photo damage comparison',   c: C.blue   },
-              { n: '02', l: 'Contract · Typhoon v2',        s: 'Lease clause analysis',     c: C.purple },
-              { n: '03', l: 'Legal RAG · ChromaDB',         s: 'ป.พ.พ. §546-563 + OCPB 2568', c: C.ok  },
-              { n: '04', l: 'Docs · ReportLab',             s: 'Thai legal PDF generation', c: C.amber  },
-            ].map((a, i) => (
-              <View key={a.n} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 15, paddingHorizontal: 20, borderBottomWidth: i < 3 ? 1 : 0, borderBottomColor: C.border2 }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: a.c + '18', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: a.c + '30' }}>
-                  <Text style={{ fontSize: 10, fontWeight: '900', color: a.c }}>{a.n}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: C.ink }}>{a.l}</Text>
-                  <Text style={{ fontSize: 11, color: C.ink3 }}>{a.s}</Text>
-                </View>
+              { l: 'Total calls', v: String(totalCalls) },
+              { l: 'Avg latency', v: '5.2s' },
+              { l: 'Agents', v: '4 active' },
+            ].map(s => (
+              <View key={s.l} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: C.border }}>
+                <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 0.5, marginBottom: 3 }}>{s.l.toUpperCase()}</Text>
+                <Text style={{ fontSize: 15, fontWeight: '900', color: C.amber }}>{s.v}</Text>
               </View>
             ))}
           </View>
+
+          <Text style={{ fontSize: 11, color: C.ink3, marginBottom: 12 }}>Tap any agent to expand details</Text>
+
+          {AGENTS.map(agent => <AgentCard key={agent.id} agent={agent} C={C} />)}
         </View>
 
-        {/* About */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 28 }}>
-          <View style={{ backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, overflow: 'hidden' }}>
-            <Row icon={Zap} iconColor={C.warn} label="About RoomWitness" sub="BDI Bangkok Hackathon 2026 · v1.0" />
-            <Row icon={Globe} iconColor={C.ok} label="OCPB Complaint Portal" sub="ocpb.go.th · call 1166" />
-            <Row icon={Info} iconColor={C.blue} label="How it works" sub="4-agent AI pipeline · Thai law RAG" />
-          </View>
+        {/* ── About ────────────────────────────────── */}
+        <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10, paddingHorizontal: 20 }}>About</Text>
+        <View style={{ backgroundColor: C.surface, borderRadius: 20, marginHorizontal: 20, borderWidth: 1, borderColor: C.border, overflow: 'hidden', marginBottom: 28 }}>
+          <SettingsRow icon={Zap} iconColor={C.warn} label="RoomWitness v1.0" sub="BDI Bangkok Hackathon 2026" />
+          <SettingsRow icon={Globe} iconColor={C.ok} label="OCPB Complaint Portal" sub="ocpb.go.th · call 1166" onPress={() => WebBrowser.openBrowserAsync('https://www.ocpb.go.th')} />
+          <SettingsRow icon={Info} iconColor={C.blue} label="Built with" sub="Expo · Groq · Typhoon v2 · ChromaDB · ReportLab" />
         </View>
 
         <View style={{ alignItems: 'center', gap: 4 }}>
-          <Text style={{ fontSize: 11, color: C.ink3 }}>BDI Bangkok Hackathon 2026</Text>
-          <Text style={{ fontSize: 11, color: C.ink3 }}>Team: KP · Beam · Tuey</Text>
+          <Text style={{ fontSize: 11, color: C.ink3 }}>BDI Bangkok Hackathon 2026 · Team: KP · Beam · Tuey</Text>
           <View style={{ marginTop: 6, backgroundColor: C.amberSoft, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: C.border }}>
             <Text style={{ fontSize: 10, color: C.amber, fontWeight: '700' }}>Powered by Thai Law AI</Text>
           </View>
