@@ -28,5 +28,5 @@ echo   Agent 04 Docs     -> http://localhost:8004
 echo   Express Gateway   -> http://localhost:3001
 echo   Web Frontend      -> http://localhost:3000
 echo.
-echo To run mobile app: cd roomwitness-app ^&^& npx expo start --clear
+echo To run mobile app: cd roomwitness-app, then: npx expo start --clear
 pause
