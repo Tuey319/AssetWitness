@@ -34,6 +34,8 @@ export interface Legal {
   dimensions: Dimensions;
   legal_basis: LegalBasis[];
   summary_th: string;
+  summary_en?: string;
+  recommended_action_th?: string;
 }
 
 export interface ClaimResult {
@@ -63,11 +65,9 @@ export interface FullAnalysis {
   cv_summary: CVSummary | null;
   evidence_summary: EvidenceSummary | null;
   images_used: { move_in: string | null; move_out: string | null };
-  // Agent 02 contract data (mirrors web frontend Agent 02 output)
   contract_summary: ContractSummary | null;
   unfair_clauses: UnfairClause[];
   pdf_filename: string | null;
-  // Agent 03 totals
   total_claimed_thb: number;
   total_unlawful_thb: number;
   routing: string;

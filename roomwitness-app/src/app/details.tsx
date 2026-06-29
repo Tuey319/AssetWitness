@@ -101,7 +101,7 @@ export default function DetailsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg">
-      <NavHeader step={4} label="ข้อมูลสำหรับเอกสาร" />
+      <NavHeader title="ข้อมูลเอกสาร" subtitle="Details for your legal documents" />
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           className="flex-1"

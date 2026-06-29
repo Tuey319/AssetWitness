@@ -119,6 +119,23 @@ export const mockResult: FullAnalysis = {
     platforms: ['LINE'],
   },
   images_used: { move_in: 'move_in.jpg', move_out: 'move_out.jpg' },
+  contract_summary: {
+    deposit_amount_thb: 20000,
+    deposit_months: 2,
+    lease_start: '2024-01-01',
+    lease_end: '2024-12-31',
+    notice_period_days: 30,
+    monthly_rent_thb: 10000,
+  },
+  unfair_clauses: [
+    { clause_text: 'ผู้เช่ารับผิดชอบความเสื่อมสภาพตามปกติทุกกรณี', reason_void: 'Void under OCPB 2568 — wear and tear clause' },
+  ],
+  pdf_filename: null,
+  total_claimed_thb: 10000,
+  total_unlawful_thb: 8000,
+  routing: 'OCPB',
+  case_summary_th: 'กรณีนี้เกี่ยวข้องกับการหักเงินประกันสามรายการ โดยรายการสีผนังและรอยพื้นถือเป็นการสึกหรอตามปกติ',
+  case_summary_en: 'This case involves three deposit deductions. The wall paint and floor scratch claims constitute normal wear and tear.',
 };
 
 export const mockDocsResult: GenerateDocsResult = {

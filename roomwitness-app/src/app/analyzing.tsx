@@ -9,9 +9,9 @@ import { getColors } from '@/lib/theme';
 
 // Only 3 steps — Agent 04 runs separately on /documents
 const STEPS = [
-  { label: 'Comparing photos',  sub: 'CV · Groq Llama-4-Scout',      color: C.blue   },
-  { label: 'Parsing contract',  sub: 'Contract · Typhoon v2',         color: C.purple },
-  { label: 'Applying Thai law', sub: 'Legal RAG · ป.พ.พ. + OCPB 2568', color: C.ok  },
+  { label: 'Comparing photos',  sub: 'CV · Groq Llama-4-Scout',      color: '#60A5FA' },
+  { label: 'Parsing contract',  sub: 'Contract · Typhoon v2',         color: '#C084FC' },
+  { label: 'Applying Thai law', sub: 'Legal RAG · ป.พ.พ. + OCPB 2568', color: '#34D399' },
 ];
 
 function RingSpinner({ color }: { color: string }) {

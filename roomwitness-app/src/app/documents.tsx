@@ -89,7 +89,7 @@ export default function DocumentsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg">
-      <NavHeader step={5} label="เอกสารของคุณ" />
+      <NavHeader title="เอกสารของคุณ" subtitle="Your legal documents" />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
