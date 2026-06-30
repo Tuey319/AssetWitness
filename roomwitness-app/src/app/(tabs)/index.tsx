@@ -1,243 +1,217 @@
 import { router } from 'expo-router';
-import { ArrowRight, BadgeCheck, CheckCircle, HandCoins, Home as HomeIcon, ShieldCheck, Users } from 'lucide-react-native';
-import { useState } from 'react';
+import {
+  Bell, Camera, ChevronRight, Clock, Droplet, FileText, Heart,
+  Paintbrush, PlugZap, PlusCircle, Scale, Search, Sofa, Sparkles, SquareStack,
+} from 'lucide-react-native';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getColors } from '@/lib/theme';
 import { useStore } from '@/lib/store';
 
-type Side = 'tenant' | 'landlord';
-
-const TENANT_STATS = [
-  { value: '฿2.3M', label: 'Recovered' },
-  { value: '142',   label: 'Cases won'  },
-  { value: '98%',   label: 'Success'    },
+// ─── Mock data — replace with real store data once cases persist ────
+const RECENT_CASES = [
+  { id: 'RW-2026-001', item: 'Wall paint + Floor scratch', date: '28 Jun', total: 8000, unlawful: 5000, verdict: 'UNLAWFUL' as const },
+  { id: 'RW-2026-002', item: 'Sofa + Coffee table',        date: '15 Jun', total: 30000, unlawful: 18000, verdict: 'DISPUTED' as const },
+  { id: 'RW-2026-003', item: 'Deep cleaning',               date: '2 Jun',  total: 2000,  unlawful: 0, verdict: 'LAWFUL' as const },
 ];
 
-const LANDLORD_STATS = [
-  { value: '4.8★',  label: 'Avg rating' },
-  { value: '89',    label: 'Certified units' },
-  { value: '0',     label: 'False claims' },
-];
-
-const BENEFITS = ['Photos analyzed by AI', 'Thai law §546–563', 'OCPB 2568', 'Ready-to-file PDFs', 'Wear & tear defense'];
-
-const HOW = [
-  { n: '01', title: 'Photo comparison', sub: 'AI detects real damage vs normal wear' },
-  { n: '02', title: 'Contract analysis', sub: 'Finds void clauses in your lease' },
-  { n: '03', title: 'Legal reasoning',   sub: 'Applies Thai law + OCPB 2568' },
-  { n: '04', title: 'Document export',   sub: 'OCPB complaint + demand letter' },
-];
-
-const HERO_COPY: Record<Side, { tag: string; headline: string; sub: string; cta: string }> = {
-  tenant: {
-    tag: 'For Bangkok Renters',
-    headline: 'Stop letting your landlord steal your deposit.',
-    sub: 'Our 4-agent AI analyzes your photos, lease, and chat history — then generates ready-to-file Thai legal documents in under 90 seconds.',
-    cta: 'Start New Case',
-  },
-  landlord: {
-    tag: 'For Property Owners',
-    headline: 'Settle deposit disputes fairly — without losing good tenants.',
-    sub: 'RoomWitness gives both sides an unbiased AI verdict on legitimate damage claims, so disputes resolve in minutes, not small-claims court.',
-    cta: 'List Your Property',
-  },
+const VCFG = {
+  UNLAWFUL: { label: 'Unlawful', text: '#F87171', bg: 'rgba(248,113,113,0.12)' },
+  DISPUTED: { label: 'Disputed', text: '#FBBF24', bg: 'rgba(251,191,36,0.12)' },
+  LAWFUL:   { label: 'Lawful',   text: '#34D399', bg: 'rgba(52,211,153,0.12)' },
 };
+
+const CATEGORIES = [
+  { key: 'wall',  label: 'Wall/Paint', icon: Paintbrush },
+  { key: 'floor', label: 'Floor',      icon: SquareStack },
+  { key: 'furn',  label: 'Furniture',  icon: Sofa },
+  { key: 'clean', label: 'Cleaning',   icon: Sparkles },
+  { key: 'appl',  label: 'Appliance',  icon: PlugZap },
+  { key: 'plumb', label: 'Plumbing',   icon: Droplet },
+];
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 export default function HomeScreen() {
   const theme   = useStore(s => s.theme);
   const profile = useStore(s => s.profile);
   const C       = getColors(theme);
-  const isDark  = theme === 'dark';
-  const [side, setSide] = useState<Side>('tenant');
-  const copy  = HERO_COPY[side];
-  const stats = side === 'tenant' ? TENANT_STATS : LANDLORD_STATS;
+  const firstName = profile.nameTh ? profile.nameTh.split(' ')[0] : 'there';
+  const activeCase = RECENT_CASES[0]; // most recent / in-progress case
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
-        {/* ── Hero ───────────────────────────────── */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 28, position: 'relative', overflow: 'hidden' }}>
-          {/* Ambient glow */}
-          <View style={{ position: 'absolute', top: -50, right: -60, width: 220, height: 220, borderRadius: 110, backgroundColor: C.amberGlow }} />
-          <View style={{ position: 'absolute', top: 40, left: -40, width: 140, height: 140, borderRadius: 70, backgroundColor: isDark ? 'rgba(96,165,250,0.04)' : 'rgba(37,99,235,0.03)' }} />
-
-          {/* Brand */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#0C0A07', fontSize: 13, fontWeight: '900' }}>RW</Text>
-              </View>
-              <View>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>RoomWitness</Text>
-                <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '500' }}>Fair Rental Dispute AI</Text>
-              </View>
+        {/* ── Header: avatar + greeting + icons ───────────── */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 16, fontWeight: '900', color: '#0C0A07' }}>
+                {profile.nameTh ? profile.nameTh.charAt(0) : 'R'}
+              </Text>
             </View>
-            {profile.nameTh ? (
-              <View style={{ backgroundColor: C.surface, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: C.border }}>
-                <Text style={{ fontSize: 12, color: C.ink2, fontWeight: '600' }}>Hi, {profile.nameTh.split(' ')[0]} 👋</Text>
-              </View>
-            ) : (
-              <View style={{ backgroundColor: C.amberSoft, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: C.border }}>
-                <Text style={{ fontSize: 10, color: C.amber, fontWeight: '700' }}>v1.0 BETA</Text>
-              </View>
-            )}
+            <View>
+              <Text style={{ fontSize: 12, color: C.ink3, fontWeight: '500' }}>{greeting()},</Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>{firstName}</Text>
+            </View>
           </View>
 
-          {/* Tenant / Landlord toggle */}
-          <View style={{ flexDirection: 'row', backgroundColor: C.surface, borderRadius: 14, padding: 4, borderWidth: 1, borderColor: C.border, marginBottom: 24 }}>
-            {([
-              { key: 'tenant' as const,   label: 'I’m a Tenant',   icon: Users },
-              { key: 'landlord' as const, label: 'I’m a Landlord', icon: HomeIcon },
-            ]).map(opt => {
-              const active = side === opt.key;
-              const Icon = opt.icon;
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable onPress={() => router.push('/(tabs)/history')}
+              style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border }}>
+              <Heart size={16} color={C.ink2} strokeWidth={2} />
+            </Pressable>
+            <Pressable
+              style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border }}>
+              <Bell size={16} color={C.ink2} strokeWidth={2} />
+              <View style={{ position: 'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.amber, borderWidth: 1.5, borderColor: C.surface }} />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* ── Search bar ───────────────────────────────────── */}
+        <Pressable
+          onPress={() => router.push('/(tabs)/history')}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 20, marginBottom: 16, backgroundColor: C.surface, borderRadius: 16, paddingHorizontal: 16, height: 50, borderWidth: 1, borderColor: C.border }}
+        >
+          <Search size={17} color={C.ink3} strokeWidth={2} />
+          <Text style={{ fontSize: 14, color: C.ink3 }}>Search cases, claim types…</Text>
+        </Pressable>
+
+        {/* ── Banner: start new case ───────────────────────── */}
+        <View style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: C.surface, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', position: 'relative' }}>
+          <View style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: 45, backgroundColor: C.amberGlow }} />
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+              <Sparkles size={12} color={C.amber} strokeWidth={2} />
+              <Text style={{ fontSize: 10, color: C.amber, fontWeight: '700', letterSpacing: 0.5 }}>AI-POWERED</Text>
+            </View>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink, lineHeight: 20 }}>
+              We'll review your deposit claim in 90 seconds
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => router.push('/new-case')}
+            style={{ backgroundColor: C.amber, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: '800', color: '#0C0A07' }}>New Case</Text>
+          </Pressable>
+        </View>
+
+        {/* ── Quick actions ─────────────────────────────────── */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginBottom: 24 }}>
+          {[
+            { icon: PlusCircle, label: 'New Case', onPress: () => router.push('/new-case') },
+            { icon: FileText,   label: 'Documents', onPress: () => router.push('/(tabs)/history') },
+            { icon: Scale,      label: 'Legal Info', onPress: () => router.push('/(tabs)/profile') },
+          ].map((a, i) => {
+            const Icon = a.icon;
+            return (
+              <Pressable key={i} onPress={a.onPress} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 16, paddingVertical: 16, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: C.border }}>
+                <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon size={17} color={C.amber} strokeWidth={2} />
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: C.ink2 }}>{a.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* ── Active case ──────────────────────────────────── */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>Active Case</Text>
+            <Pressable onPress={() => router.push('/(tabs)/history')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Text style={{ fontSize: 12, color: C.amber, fontWeight: '700' }}>See All</Text>
+              <ChevronRight size={13} color={C.amber} strokeWidth={2.5} />
+            </Pressable>
+          </View>
+
+          <Pressable style={{ backgroundColor: C.amber, borderRadius: 20, padding: 18, position: 'relative', overflow: 'hidden' }}>
+            <View style={{ position: 'absolute', bottom: -30, right: -20, width: 110, height: 110, borderRadius: 55, backgroundColor: 'rgba(0,0,0,0.06)' }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 16, fontWeight: '900', color: '#0C0A07' }}>W</Text>
+                </View>
+                <View>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#0C0A07' }}>{activeCase.id}</Text>
+                  <Text style={{ fontSize: 11, color: 'rgba(12,10,7,0.6)', fontWeight: '600' }}>{activeCase.item}</Text>
+                </View>
+              </View>
+              <View style={{ backgroundColor: 'rgba(0,0,0,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 }}>
+                <Text style={{ fontSize: 10, fontWeight: '800', color: '#0C0A07' }}>{VCFG[activeCase.verdict].label}</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }}>
+              <Clock size={13} color="#0C0A07" strokeWidth={2.5} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#0C0A07' }}>Filed {activeCase.date} · ฿{activeCase.unlawful.toLocaleString()} recoverable</Text>
+            </View>
+          </Pressable>
+        </View>
+
+        {/* ── Claim categories ─────────────────────────────── */}
+        <View style={{ marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 12 }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>Claim Categories</Text>
+            <Pressable onPress={() => router.push('/new-case')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Text style={{ fontSize: 12, color: C.amber, fontWeight: '700' }}>See All</Text>
+              <ChevronRight size={13} color={C.amber} strokeWidth={2.5} />
+            </Pressable>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
+            {CATEGORIES.map(c => {
+              const Icon = c.icon;
               return (
-                <Pressable
-                  key={opt.key}
-                  onPress={() => setSide(opt.key)}
-                  style={{
-                    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    paddingVertical: 10, borderRadius: 10,
-                    backgroundColor: active ? C.amber : 'transparent',
-                  }}
-                >
-                  <Icon size={14} color={active ? '#0C0A07' : C.ink3} strokeWidth={2.25} />
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: active ? '#0C0A07' : C.ink3 }}>{opt.label}</Text>
+                <Pressable key={c.key} onPress={() => router.push('/new-case')} style={{ alignItems: 'center', gap: 7, width: 64 }}>
+                  <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border }}>
+                    <Icon size={22} color={C.amber} strokeWidth={1.75} />
+                  </View>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: C.ink2, textAlign: 'center' }}>{c.label}</Text>
                 </Pressable>
               );
             })}
-          </View>
-
-          {/* Headline */}
-          <Text style={{ fontSize: 13, color: C.amber, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>
-            {copy.tag}
-          </Text>
-          <Text style={{ fontSize: 38, fontWeight: '900', color: C.ink, letterSpacing: -1.6, lineHeight: 42, marginBottom: 16 }}>
-            {copy.headline}
-          </Text>
-          <Text style={{ fontSize: 16, color: C.ink2, lineHeight: 26, marginBottom: 28 }}>
-            {copy.sub}
-          </Text>
-
-          {/* CTA */}
-          <Pressable
-            onPress={() => side === 'tenant' ? router.push('/new-case') : router.push('/new-case')}
-            style={{ backgroundColor: C.amber, borderRadius: 18, paddingVertical: 19, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 14 }}
-          >
-            <Text style={{ color: '#0C0A07', fontSize: 17, fontWeight: '900', letterSpacing: -0.4 }}>{copy.cta}</Text>
-            <ArrowRight size={20} color="#0C0A07" strokeWidth={2.5} />
-          </Pressable>
-          <Text style={{ fontSize: 12, color: C.ink3, textAlign: 'center' }}>
-            {side === 'tenant' ? 'Free · No account required · Results in <90 seconds' : 'Free to list · Verified by AI · No commission to start'}
-          </Text>
+          </ScrollView>
         </View>
 
-        {/* ── Stats ──────────────────────────────── */}
-        <View style={{ flexDirection: 'row', paddingHorizontal: 20, gap: 8, marginBottom: 24 }}>
-          {stats.map((s, i) => (
-            <View key={i} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: C.border, alignItems: 'center' }}>
-              <Text style={{ fontSize: 22, fontWeight: '900', color: C.amber, letterSpacing: -1 }}>{s.value}</Text>
-              <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '600', marginTop: 3 }}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
+        {/* ── Recent cases list ─────────────────────────────── */}
+        <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>Recent Cases</Text>
+            <Pressable onPress={() => router.push('/(tabs)/history')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Text style={{ fontSize: 12, color: C.amber, fontWeight: '700' }}>See All</Text>
+              <ChevronRight size={13} color={C.amber} strokeWidth={2.5} />
+            </Pressable>
+          </View>
 
-        {/* ── Built for both sides ─────────────────── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-          <Text style={{ fontSize: 11, color: C.ink3, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>
-            Built for both sides
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1, backgroundColor: C.surface, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: side === 'tenant' ? C.amber + '55' : C.border }}>
-              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                <Users size={15} color={C.amber} strokeWidth={2} />
-              </View>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: C.ink, marginBottom: 4 }}>Tenants</Text>
-              <Text style={{ fontSize: 11, color: C.ink3, lineHeight: 16 }}>Free AI evidence review, citing real Thai law — not guesswork.</Text>
-            </View>
-            <View style={{ flex: 1, backgroundColor: C.surface, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: side === 'landlord' ? C.amber + '55' : C.border }}>
-              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                <HandCoins size={15} color={C.amber} strokeWidth={2} />
-              </View>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: C.ink, marginBottom: 4 }}>Landlords</Text>
-              <Text style={{ fontSize: 11, color: C.ink3, lineHeight: 16 }}>Defend legitimate claims fast, avoid OCPB complaints and bad reviews.</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── Damage agreement teaser ───────────────── */}
-        <View style={{ marginHorizontal: 20, marginBottom: 24, backgroundColor: C.surface, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.border, flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
-          <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <HandCoins size={18} color={C.amber} strokeWidth={2} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: C.ink }}>Fair Price Agreement</Text>
-              <View style={{ backgroundColor: C.amberSoft, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 }}>
-                <Text style={{ fontSize: 9, fontWeight: '700', color: C.amber }}>COMING SOON</Text>
-              </View>
-            </View>
-            <Text style={{ fontSize: 12, color: C.ink3, lineHeight: 18 }}>
-              AI estimates fair repair cost from market data, then both tenant and landlord digitally approve — no more guessing what's reasonable.
-            </Text>
-          </View>
-        </View>
-
-        {/* ── Certification teaser ──────────────────── */}
-        <View style={{ marginHorizontal: 20, marginBottom: 28, backgroundColor: C.surface, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.border, flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
-          <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <ShieldCheck size={18} color={C.amber} strokeWidth={2} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-              <BadgeCheck size={13} color={C.amber} strokeWidth={2} />
-              <Text style={{ fontSize: 14, fontWeight: '800', color: C.ink }}>RoomWitness Certified</Text>
-            </View>
-            <Text style={{ fontSize: 12, color: C.ink3, lineHeight: 18 }}>
-              Landlords with a clean dispute history earn a Certified badge — a trust signal renters can filter by when choosing where to live.
-            </Text>
-          </View>
-        </View>
-
-        {/* ── How it works ───────────────────────── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 28 }}>
-          <Text style={{ fontSize: 11, color: C.ink3, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 16 }}>
-            How it works
-          </Text>
-          <View style={{ backgroundColor: C.surface, borderRadius: 22, borderWidth: 1, borderColor: C.border, overflow: 'hidden' }}>
-            {HOW.map((h, i) => (
-              <View key={h.n} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 18, paddingHorizontal: 20, borderBottomWidth: i < HOW.length - 1 ? 1 : 0, borderBottomColor: C.border2 }}>
-                <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: C.amberSoft, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 12, fontWeight: '800', color: C.amber }}>{h.n}</Text>
+          {RECENT_CASES.map(c => {
+            const v = VCFG[c.verdict];
+            return (
+              <Pressable key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surface, borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: C.border }}>
+                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center' }}>
+                  <Camera size={18} color={C.amber} strokeWidth={1.75} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink }}>{h.title}</Text>
-                  <Text style={{ fontSize: 12, color: C.ink3, marginTop: 2 }}>{h.sub}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }} numberOfLines={1}>{c.item}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                    <Text style={{ fontSize: 11, color: C.ink3 }}>{c.id} · {c.date}</Text>
+                  </View>
                 </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* ── Benefit pills ───────────────────────── */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8, marginBottom: 28 }}>
-          {BENEFITS.map((t, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.surface, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: C.border }}>
-              <CheckCircle size={12} color={C.amber} strokeWidth={2.5} />
-              <Text style={{ fontSize: 13, color: C.ink2, fontWeight: '600' }}>{t}</Text>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* ── Footer disclaimer ──────────────────── */}
-        <View style={{ marginHorizontal: 20, backgroundColor: C.surface, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: C.border }}>
-          <Text style={{ fontSize: 11, color: C.ink3, lineHeight: 18, textAlign: 'center' }}>
-            Powered by Groq Llama-4-Scout + Typhoon v2 + ChromaDB RAG{'\n'}
-            Legal basis: ป.พ.พ. §537–571 · OCPB Notification B.E. 2568{'\n'}
-            <Text style={{ color: C.amber }}>BDI Bangkok Hackathon 2026</Text>
-          </Text>
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: C.ink }}>฿{c.total.toLocaleString()}</Text>
+                  <View style={{ backgroundColor: v.bg, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
+                    <Text style={{ fontSize: 9, fontWeight: '700', color: v.text }}>{v.label}</Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>
