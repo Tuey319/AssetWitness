@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { ArrowRight, ChevronLeft, ImagePlus, Plus, X } from 'lucide-react-native';
+import { ArrowRight, Camera, ChevronLeft, ImagePlus, Plus, X } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import {
   Alert, Animated, Dimensions, Image, KeyboardAvoidingView,
@@ -53,10 +53,30 @@ function DarkInput({ label, value, onChange, placeholder, numeric = false, multi
 
 function PhotoStrip({ label, uris, onAdd, onRemove }: { label: string; uris: string[]; onAdd: (u: string) => void; onRemove: (i: number) => void }) {
   const C = getColors(useStore(s => s.theme));
-  async function pick() {
+
+  async function pickFromLibrary() {
     const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, quality: 0.85 });
     if (!r.canceled) r.assets.forEach(a => onAdd(a.uri));
   }
+
+  async function takePhoto() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Camera access needed', 'Enable camera permission in Settings to take photos.');
+      return;
+    }
+    const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 });
+    if (!r.canceled) r.assets.forEach(a => onAdd(a.uri));
+  }
+
+  function choose() {
+    Alert.alert('Add photo', undefined, [
+      { text: 'Take Photo', onPress: takePhoto },
+      { text: 'Choose from Library', onPress: pickFromLibrary },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
+
   return (
     <View style={{ marginBottom: 20 }}>
       <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink3, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 }}>{label}</Text>
@@ -71,9 +91,12 @@ function PhotoStrip({ label, uris, onAdd, onRemove }: { label: string; uris: str
               </Pressable>
             </View>
           ))}
-          <Pressable onPress={pick}
+          <Pressable onPress={choose}
             style={{ width: 88, height: 88, borderRadius: 14, borderWidth: 1, borderColor: C.border, borderStyle: 'dashed', backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-            <ImagePlus size={20} color={C.ink3} strokeWidth={1.5} />
+            <View style={{ flexDirection: 'row', gap: 3 }}>
+              <Camera size={16} color={C.ink3} strokeWidth={1.5} />
+              <ImagePlus size={16} color={C.ink3} strokeWidth={1.5} />
+            </View>
             <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '600' }}>Add</Text>
           </Pressable>
         </View>

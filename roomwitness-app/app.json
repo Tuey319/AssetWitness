@@ -25,7 +25,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-image-picker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "RoomWitness needs access to your photos so you can attach move-in/move-out evidence.",
+          "cameraPermission": "RoomWitness needs camera access so you can take photos of damage as evidence."
+        }
+      ],
       [
         "expo-splash-screen",
         {
