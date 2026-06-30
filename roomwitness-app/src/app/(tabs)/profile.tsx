@@ -124,41 +124,31 @@ function AgentCard({ agent, C }: { agent: typeof AGENTS[0]; C: ReturnType<typeof
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <Pressable onPress={() => setExpanded(v => !v)} style={{ backgroundColor: C.surface2, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: agent.color + '22' }}>
+    <Pressable onPress={() => setExpanded(v => !v)} style={{ backgroundColor: C.surface, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: C.border }}>
       {/* Header row */}
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: agent.color + '18', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: agent.color + '30' }}>
+        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: agent.color + '18', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 12, fontWeight: '900', color: agent.color }}>{agent.id}</Text>
         </View>
 
         <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-            <Text style={{ fontSize: 14, fontWeight: '800', color: C.ink }}>{agent.name}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: agent.color + '14', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 999 }}>
-              <PulseDot color={agent.color} />
-              <Text style={{ fontSize: 9, fontWeight: '700', color: agent.color, letterSpacing: 0.5 }}>ONLINE</Text>
-            </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+            <Text style={{ fontSize: 14, fontWeight: '800', color: C.ink, flexShrink: 1 }} numberOfLines={1}>{agent.name}</Text>
+            <PulseDot color={agent.color} />
           </View>
 
           {/* Model name — monospace */}
-          <Text style={{ fontSize: 10, color: agent.color, fontFamily: 'IBMPlexMono_500Medium', marginBottom: 6 }} numberOfLines={1}>
+          <Text style={{ fontSize: 10, color: C.ink3, fontFamily: 'IBMPlexMono_500Medium', marginBottom: 8 }} numberOfLines={1}>
             {agent.model}
           </Text>
 
-          {/* Metric pills */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-            {[
-              { l: agent.provider },
-              { l: agent.context },
-              { l: agent.latency },
-              { l: `${agent.calls} calls` },
-            ].map((m, i) => (
-              <View key={i} style={{ backgroundColor: C.surface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: C.border2 }}>
-                <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '600' }}>{m.l}</Text>
-              </View>
-            ))}
-          </View>
+          {/* Metric strip — plain text, no pills */}
+          <Text style={{ fontSize: 11, color: C.ink3 }}>
+            {agent.provider} · {agent.latency} · {agent.calls} calls
+          </Text>
         </View>
+
+        <Text style={{ fontSize: 13, color: C.ink3, marginTop: 2 }}>{expanded ? '▲' : '▼'}</Text>
       </View>
 
       {/* Expanded detail */}
@@ -168,31 +158,18 @@ function AgentCard({ agent, C }: { agent: typeof AGENTS[0]; C: ReturnType<typeof
 
           <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
             {agent.tags.map(t => (
-              <View key={t} style={{ backgroundColor: agent.color + '14', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: agent.color + '25' }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: agent.color }}>{t}</Text>
+              <View key={t} style={{ backgroundColor: C.surface2, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+                <Text style={{ fontSize: 11, fontWeight: '600', color: C.ink2 }}>{t}</Text>
               </View>
             ))}
           </View>
 
-          {/* Mini stats row */}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {[
-              { label: 'Type', value: agent.type },
-              { label: 'Calls', value: String(agent.calls) },
-            ].map(s => (
-              <View key={s.label} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: C.border2 }}>
-                <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 0.5, marginBottom: 3 }}>{s.label.toUpperCase()}</Text>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }}>{s.value}</Text>
-              </View>
-            ))}
+          <View style={{ backgroundColor: C.surface2, borderRadius: 10, padding: 10 }}>
+            <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 0.5, marginBottom: 3 }}>CONTEXT</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }}>{agent.context} · {agent.type}</Text>
           </View>
         </View>
       )}
-
-      {/* Expand hint */}
-      <View style={{ position: 'absolute', bottom: 14, right: 16 }}>
-        <Text style={{ fontSize: 11, color: C.ink3 }}>{expanded ? '▲' : '▼'}</Text>
-      </View>
     </Pressable>
   );
 }
@@ -252,8 +229,8 @@ export default function ProfileScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center' }}>
                 {profile.nameTh
-                  ? <Text style={{ fontSize: 20, fontWeight: '900', color: '#0C0A07' }}>{profile.nameTh.charAt(0)}</Text>
-                  : <User size={22} color="#0C0A07" strokeWidth={2.5} />}
+                  ? <Text style={{ fontSize: 20, fontWeight: '900', color: '#FFFFFF' }}>{profile.nameTh.charAt(0)}</Text>
+                  : <User size={22} color="#FFFFFF" strokeWidth={2.5} />}
               </View>
               <View>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: C.ink }}>{profile.nameTh || 'Your Name'}</Text>
@@ -265,8 +242,8 @@ export default function ProfileScreen() {
               onPress={() => editing ? save() : setEditing(true)}
               style={{ backgroundColor: editing ? C.amber : C.amberSoft, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', gap: 5 }}
             >
-              {editing && <Save size={12} color="#0C0A07" strokeWidth={2.5} />}
-              <Text style={{ fontSize: 12, color: editing ? '#0C0A07' : C.amber, fontWeight: '700' }}>{editing ? 'Save' : 'Edit'}</Text>
+              {editing && <Save size={12} color="#FFFFFF" strokeWidth={2.5} />}
+              <Text style={{ fontSize: 12, color: editing ? '#FFFFFF' : C.amber, fontWeight: '700' }}>{editing ? 'Save' : 'Edit'}</Text>
             </Pressable>
           </View>
 
@@ -305,7 +282,7 @@ export default function ProfileScreen() {
           <SettingsRow icon={isDark ? Moon : Sun} iconColor={C.amber}
             label={isDark ? 'Dark mode' : 'Light mode'}
             sub={isDark ? 'Warm dark amber theme' : 'Clean light theme'}
-            right={<Switch value={isDark} onValueChange={toggleTheme} trackColor={{ false: C.border2, true: C.amber }} thumbColor={isDark ? '#0C0A07' : '#fff'} />}
+            right={<Switch value={isDark} onValueChange={toggleTheme} trackColor={{ false: C.border2, true: C.amber }} thumbColor="#fff" />}
           />
           <SettingsRow icon={Globe} iconColor={C.blue} label="Language"
             sub={language === 'th' ? 'ภาษาไทย + English' : 'English only'}
@@ -322,14 +299,14 @@ export default function ProfileScreen() {
         <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10, paddingHorizontal: 20 }}>Legal database</Text>
         <View style={{ marginHorizontal: 20, marginBottom: 24, gap: 8 }}>
           {LEGAL_DB.map(db => (
-            <View key={db.title} style={{ backgroundColor: C.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: db.color + '22' }}>
+            <View key={db.title} style={{ backgroundColor: C.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: C.border }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
                   <PulseDot color={db.color} />
                   <Text style={{ fontSize: 14, fontWeight: '700', color: C.ink, flex: 1 }}>{db.title}</Text>
                 </View>
-                <View style={{ backgroundColor: db.color + '14', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: db.color }}>{db.chunks} chunks</Text>
+                <View style={{ backgroundColor: C.surface2, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink2 }}>{db.chunks} chunks</Text>
                 </View>
               </View>
               <Text style={{ fontSize: 12, color: C.ink3, marginBottom: 12 }}>{db.detail}</Text>
@@ -339,10 +316,10 @@ export default function ProfileScreen() {
                   <Pressable
                     key={s.url}
                     onPress={() => WebBrowser.openBrowserAsync(s.url)}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: db.color + '0A', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: db.color + '18' }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.surface2, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10 }}
                   >
-                    <ExternalLink size={11} color={db.color} strokeWidth={2} />
-                    <Text style={{ fontSize: 11, color: db.color, fontWeight: '600', flex: 1 }} numberOfLines={1}>{s.label}</Text>
+                    <ExternalLink size={11} color={C.ink2} strokeWidth={2} />
+                    <Text style={{ fontSize: 11, color: C.ink2, fontWeight: '600', flex: 1 }} numberOfLines={1}>{s.label}</Text>
                   </Pressable>
                 ))}
               </View>

@@ -8,35 +8,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/lib/store';
+import { getColors } from '@/lib/theme';
 import type { LandlordClaim } from '@/lib/types';
 
 const { width: W } = Dimensions.get('window');
-
-const C = {
-  bg:        '#0C0A07',
-  surface:   '#181410',
-  surface2:  '#221C10',
-  ink:       '#FAF8F5',
-  ink2:      'rgba(250,248,245,0.55)',
-  ink3:      'rgba(250,248,245,0.30)',
-  amber:     '#F59E0B',
-  amberSoft: 'rgba(245,158,11,0.10)',
-  border:    'rgba(245,158,11,0.14)',
-  border2:   'rgba(250,248,245,0.06)',
-  danger:    '#F87171',
-  dangerBg:  'rgba(248,113,113,0.10)',
-  blue:      '#60A5FA',
-  blueBg:    'rgba(96,165,250,0.10)',
-  ok:        '#34D399',
-  okBg:      'rgba(52,211,153,0.10)',
-};
 
 let _id = 0;
 type Row = LandlordClaim & { id: number };
 const newRow = (): Row => ({ id: ++_id, item: '', description: '', amount_thb: 0 });
 
 const STEPS = [
-  { headline: "What is the\nlandlord charging?", sub: 'Add each deduction item', accent: '#F59E0B' },
+  { headline: "What is the\nlandlord charging?", sub: 'Add each deduction item', accent: '#E07A3F' },
   { headline: "Add your\nphotos",               sub: 'Move-in vs move-out',      accent: '#60A5FA' },
   { headline: "Extra\nevidence",                sub: 'Contract, messages — optional', accent: '#34D399' },
   { headline: "You're\nready.",                 sub: 'Review before AI analysis', accent: '#C084FC' },
@@ -46,6 +28,7 @@ function DarkInput({ label, value, onChange, placeholder, numeric = false, multi
   label: string; value: string; onChange: (t: string) => void;
   placeholder: string; numeric?: boolean; multiline?: boolean;
 }) {
+  const C = getColors(useStore(s => s.theme));
   const [focus, setFocus] = useState(false);
   return (
     <View style={{ marginBottom: 12 }}>
@@ -69,6 +52,7 @@ function DarkInput({ label, value, onChange, placeholder, numeric = false, multi
 }
 
 function PhotoStrip({ label, uris, onAdd, onRemove }: { label: string; uris: string[]; onAdd: (u: string) => void; onRemove: (i: number) => void }) {
+  const C = getColors(useStore(s => s.theme));
   async function pick() {
     const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, quality: 0.85 });
     if (!r.canceled) r.assets.forEach(a => onAdd(a.uri));
@@ -100,6 +84,8 @@ function PhotoStrip({ label, uris, onAdd, onRemove }: { label: string; uris: str
 
 export default function NewCaseScreen() {
   const setForm = useStore(s => s.setForm);
+  const theme   = useStore(s => s.theme);
+  const C       = getColors(theme);
   const [claims, setClaims]   = useState<Row[]>([newRow()]);
   const [moveIn, setIn]       = useState<string[]>([]);
   const [moveOut, setOut]     = useState<string[]>([]);
@@ -183,7 +169,7 @@ export default function NewCaseScreen() {
             <Text style={{ fontSize: 13, color: C.ink2, marginTop: 6 }}>{s.sub}</Text>
           </View>
           <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: s.accent, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: '900', color: '#0C0A07' }}>{step + 1}</Text>
+            <Text style={{ fontSize: 20, fontWeight: '900', color: '#FFFFFF' }}>{step + 1}</Text>
           </View>
         </View>
       </View>
@@ -201,7 +187,7 @@ export default function NewCaseScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center' }}>
-                          <Text style={{ fontSize: 11, fontWeight: '900', color: '#0C0A07' }}>{idx + 1}</Text>
+                          <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFFFFF' }}>{idx + 1}</Text>
                         </View>
                         <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink2 }}>Claim {idx + 1}</Text>
                       </View>
@@ -353,15 +339,15 @@ export default function NewCaseScreen() {
         {step < 3 ? (
           <Pressable onPress={next}
             style={{ backgroundColor: STEPS[step].accent, borderRadius: 16, paddingVertical: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-            <Text style={{ color: '#0C0A07', fontSize: 16, fontWeight: '900', letterSpacing: -0.3 }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', letterSpacing: -0.3 }}>
               {step === 0 ? `Continue · ${claims.filter(c=>c.item.trim()).length} claim${claims.filter(c=>c.item.trim()).length !== 1 ? 's' : ''}` : 'Continue'}
             </Text>
-            <ArrowRight size={18} color="#0C0A07" strokeWidth={2.5} />
+            <ArrowRight size={18} color="#FFFFFF" strokeWidth={2.5} />
           </Pressable>
         ) : (
           <Pressable onPress={submit}
             style={{ backgroundColor: C.amber, borderRadius: 16, paddingVertical: 17, alignItems: 'center' }}>
-            <Text style={{ color: '#0C0A07', fontSize: 16, fontWeight: '900', letterSpacing: -0.3 }}>Analyze with AI →</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', letterSpacing: -0.3 }}>Analyze with AI →</Text>
           </Pressable>
         )}
         {step === 2 && (

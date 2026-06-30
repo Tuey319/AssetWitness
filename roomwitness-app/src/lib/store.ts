@@ -40,7 +40,7 @@ export const useStore = create<Store>((set) => ({
   setDocsDetails: (docsDetails) => set({ docsDetails }),
   setDocsResult: (docsResult) => set({ docsResult }),
 
-  theme: 'dark',
+  theme: 'light',
   setTheme: (theme) => set({ theme }),
   toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
 
