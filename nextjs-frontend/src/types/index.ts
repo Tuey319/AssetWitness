@@ -68,6 +68,10 @@ export interface Agent02Result {
   unfair_clauses: UnfairClause[];
   ocr_used: boolean;
   extraction_confidence: number;
+  landlord_promises: string[];
+  tenant_promises: string[];
+  deposit_mentions: string[];
+  platforms: string[];
 }
 
 export interface Agent03Result {

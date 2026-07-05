@@ -28,14 +28,14 @@ export default function ClaimsList({ claims, onChange }: Props) {
 
   return (
     <section className="card">
-      <h2>Landlord claims</h2>
+      <h2>รายการหักเงินของเจ้าของบ้าน <span className="h2-en">Landlord claims</span></h2>
       <div>
         {claims.map((c, i) => (
           <div key={i} className="claim-row">
             <div className="claim-num">{i + 1}</div>
             <div className="claim-fields">
               <div className="field">
-                <label>Item</label>
+                <label>รายการ <span className="lbl-en">Item</span></label>
                 <input
                   type="text"
                   placeholder="e.g. bedroom wall"
@@ -44,7 +44,7 @@ export default function ClaimsList({ claims, onChange }: Props) {
                 />
               </div>
               <div className="field claim-desc-field">
-                <label>Description</label>
+                <label>รายละเอียด <span className="lbl-en">Description</span></label>
                 <input
                   type="text"
                   placeholder="Describe the damage"
@@ -53,7 +53,7 @@ export default function ClaimsList({ claims, onChange }: Props) {
                 />
               </div>
               <div className="field claim-amount-field">
-                <label>Amount (THB)</label>
+                <label>จำนวนเงิน (บาท) <span className="lbl-en">Amount</span></label>
                 <input
                   type="number"
                   min="0"
@@ -67,7 +67,7 @@ export default function ClaimsList({ claims, onChange }: Props) {
           </div>
         ))}
       </div>
-      <button type="button" className="btn-secondary" onClick={add}>+ Add claim</button>
+      <button type="button" className="btn-secondary" onClick={add}>+ เพิ่มรายการ · Add claim</button>
     </section>
   );
 }

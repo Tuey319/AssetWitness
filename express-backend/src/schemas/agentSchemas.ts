@@ -14,12 +14,14 @@ export const agent01BodySchema = z.object({
 
 // Agent 02 — multipart body
 export const agent02BodySchema = z.object({
-  claims:          z.string().default('[]'),
-  contract_clause: z.string().default(''),
-  lease_start:     z.string().default(''),
-  lease_end:       z.string().default(''),
-  deposit_amount:  z.string().default('0'),
-  monthly_rent:    z.string().default('0'),
+  claims:                   z.string().default('[]'),
+  contract_clause:          z.string().default(''),
+  lease_start:              z.string().default(''),
+  lease_end:                z.string().default(''),
+  deposit_amount:           z.string().default('0'),
+  monthly_rent:             z.string().default('0'),
+  manual_landlord_promises: z.string().default(''),
+  manual_tenant_promises:   z.string().default(''),
 });
 
 // Agent 03 — JSON body
@@ -36,6 +38,18 @@ export const agent04BodySchema = z.object({
   documents_to_generate: z.array(z.string()),
   total_unlawful_thb:    z.number(),
   // Optional rich context from Agent 03 (used for richer document content)
+  verdicts:              z.array(z.unknown()).optional().default([]),
+  case_summary_th:       z.string().optional().default(''),
+  case_summary_en:       z.string().optional().default(''),
+  claims:                z.array(z.unknown()).optional().default([]),
+});
+
+// POST /generate-documents — JSON body (extra client fields like tenant/landlord
+// PII are stripped; only what Agent 04 consumes is forwarded)
+export const generateDocumentsBodySchema = z.object({
+  documents_to_generate: z.array(z.string())
+    .default(['demand_letter', 'evidence_summary', 'ocpb_complaint']),
+  total_unlawful_thb:    z.number().default(0),
   verdicts:              z.array(z.unknown()).optional().default([]),
   case_summary_th:       z.string().optional().default(''),
   case_summary_en:       z.string().optional().default(''),
