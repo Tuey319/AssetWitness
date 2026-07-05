@@ -71,8 +71,8 @@ export async function analyze(form: AnalyzeForm): Promise<FullAnalysis> {
 
 /**
  * POST /generate-documents — Agent 04 document generation.
- * NOTE: the backend route does not exist yet (only agent04_doc_generator/ logic does);
- * see API_CONTRACT.md. Until then this returns mocked docs.
+ * Proxied by Express to agent04_service; download_url comes back as an
+ * absolute URL pointing at the Express /download/:caseId/:docType proxy.
  */
 export async function generateDocuments(input: GenerateDocsForm): Promise<GenerateDocsResult> {
   if (USE_MOCK) {

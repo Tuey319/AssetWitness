@@ -11,3 +11,20 @@ const storage = multer.diskStorage({
 });
 
 export default multer({ storage, limits: { fileSize: config.maxFileSizeBytes } });
+
+// Multipart field configs shared by routes/index.ts
+export const agent01Fields = [
+  { name: 'move_in',  maxCount: 10 },
+  { name: 'move_out', maxCount: 10 },
+];
+
+export const agent02Fields = [
+  { name: 'contract_file', maxCount: 1 },
+  { name: 'screenshots',   maxCount: 10 },
+];
+
+export const fullAnalysisFields = [
+  { name: 'move_in_image',  maxCount: 10 },
+  { name: 'move_out_image', maxCount: 10 },
+  { name: 'screenshots',    maxCount: 10 },
+];

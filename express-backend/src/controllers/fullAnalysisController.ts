@@ -11,9 +11,10 @@ import { postMultipart, postJSON, appendFile, cleanupFiles } from '../services/a
  *   lease_start, lease_end, deposit_amount, monthly_rent, landlord_unit_count
  */
 export async function runFullAnalysis(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const files    = req.files as Record<string, Express.Multer.File[]> | undefined;
-  const moveIns  = files?.move_in_image  ?? [];
-  const moveOuts = files?.move_out_image ?? [];
+  const files       = req.files as Record<string, Express.Multer.File[]> | undefined;
+  const moveIns     = files?.move_in_image  ?? [];
+  const moveOuts    = files?.move_out_image ?? [];
+  const screenshots = files?.screenshots    ?? [];
 
   try {
     const claimsRaw: string        = req.body.claims                   ?? '[]';
@@ -37,12 +38,15 @@ export async function runFullAnalysis(req: Request, res: Response, next: NextFun
 
     // ── Agent 02 — Contract ─────────────────────────────────────────
     const fd2 = new FormData();
-    fd2.append('claims',          claimsRaw);
-    fd2.append('contract_clause', contractClause);
-    fd2.append('lease_start',     leaseStart);
-    fd2.append('lease_end',       leaseEnd);
-    fd2.append('deposit_amount',  depositAmount);
-    fd2.append('monthly_rent',    monthlyRent);
+    fd2.append('claims',                   claimsRaw);
+    fd2.append('contract_clause',          contractClause);
+    fd2.append('lease_start',              leaseStart);
+    fd2.append('lease_end',                leaseEnd);
+    fd2.append('deposit_amount',           depositAmount);
+    fd2.append('monthly_rent',             monthlyRent);
+    fd2.append('manual_landlord_promises', landlordPromises);
+    fd2.append('manual_tenant_promises',   tenantPromises);
+    screenshots.forEach(f => appendFile(fd2, 'screenshots', f));
     const a02 = await postMultipart('agent02', '/api/v1/agent02', fd2) as any;
 
     // ── Agent 03 — Legal ────────────────────────────────────────────
@@ -65,9 +69,12 @@ export async function runFullAnalysis(req: Request, res: Response, next: NextFun
     const cvByClaimId   = Object.fromEntries((damageMap as any[]).map((d: any) => [d.claim_id, d]));
     const verdictByItem = Object.fromEntries((a03?.verdicts ?? []).map((v: any) => [v.item?.toLowerCase(), v]));
 
+    // API_CONTRACT.md: per-claim `cv` must be null (not a stub object) when no photos were provided
+    const hasPhotos = moveIns.length > 0 && moveOuts.length > 0;
+
     const claimResults = claims.map((claim, i) => {
       const claimId = `C${String(i + 1).padStart(3, '0')}`;
-      const cv      = cvByClaimId[claimId] ?? null;
+      const cv      = hasPhotos ? cvByClaimId[claimId] ?? null : null;
       const verdict = verdictByItem[claim.item?.toLowerCase()] ?? null;
 
       const classification: 'LAWFUL' | 'DISPUTED' | 'UNLAWFUL' =
@@ -140,6 +147,12 @@ export async function runFullAnalysis(req: Request, res: Response, next: NextFun
       unfair_clauses:    a02?.unfair_clauses     ?? [],
       pdf_filename:      a02?.pdf_filename       ?? null,
 
+      // Agent 02 chat-screenshot evidence
+      landlord_promises: a02?.landlord_promises  ?? [],
+      tenant_promises:   a02?.tenant_promises    ?? [],
+      deposit_mentions:  a02?.deposit_mentions   ?? [],
+      platforms:         a02?.platforms          ?? [],
+
       // Agent 03 totals and routing
       total_claimed_thb:  a03?.total_claimed_thb  ?? claims.reduce((s: number, c: any) => s + c.amount_thb, 0),
       total_unlawful_thb: a03?.total_unlawful_thb ?? 0,
@@ -151,6 +164,6 @@ export async function runFullAnalysis(req: Request, res: Response, next: NextFun
   } catch (err) {
     next(err);
   } finally {
-    cleanupFiles(...moveIns, ...moveOuts);
+    cleanupFiles(...moveIns, ...moveOuts, ...screenshots);
   }
 }

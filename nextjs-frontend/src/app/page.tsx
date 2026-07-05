@@ -34,6 +34,7 @@ export default function Home() {
   // ── UI state ────────────────────────────────────────────────────
   const [corpusLoaded, setCorpusLoaded] = useState<boolean | null>(null);
   const [running,   setRunning]   = useState(false);
+  const [elapsed,   setElapsed]   = useState(0);
   const [error,     setError]     = useState<string | null>(null);
   const [showPipeline, setShowPipeline] = useState(false);
   const [steps,   setSteps]   = useState<StepState[]>(IDLE_STEPS);
@@ -87,6 +88,14 @@ export default function Home() {
       .then(d => setCorpusLoaded(!!d.corpus_loaded))
       .catch(() => setCorpusLoaded(false));
   }, []);
+
+  // ── Elapsed seconds while the pipeline runs ──────────────────────
+  useEffect(() => {
+    if (!running) return;
+    setElapsed(0);
+    const t = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [running]);
 
 
   // ── Screenshot upload ────────────────────────────────────────────
@@ -143,6 +152,11 @@ export default function Home() {
     setSteps(IDLE_STEPS);
     setResults({});
 
+    // Bring the pipeline into view once it has rendered
+    setTimeout(() => {
+      document.getElementById('pipeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+
     try {
       // ── Agent 01 ──────────────────────────────────
       setStep(0, 'active');
@@ -164,7 +178,10 @@ export default function Home() {
       fd2.append('lease_end',        leaseEnd);
       fd2.append('deposit_amount',   depositAmount || '0');
       fd2.append('monthly_rent',     monthlyRent   || '0');
+      fd2.append('manual_landlord_promises', landlordPromises);
+      fd2.append('manual_tenant_promises',   tenantPromises);
       if (contractFile) fd2.append('contract_file', contractFile);
+      screenshots.forEach(f => fd2.append('screenshots', f));
       const d2 = await fetch('/run/agent02', { method: 'POST', body: fd2 }).then(r => r.json());
       if (d2.error) throw new Error(`Agent 02: ${d2.error}`);
       setResults(prev => ({ ...prev, agent02: d2 }));
@@ -224,8 +241,8 @@ export default function Home() {
     : corpusLoaded ? 'corpus-pill corpus-ok' : 'corpus-pill corpus-err';
 
   const corpusPillText = corpusLoaded === null
-    ? 'checking…'
-    : corpusLoaded ? '✓ Corpus ready' : '✗ Corpus missing';
+    ? 'กำลังตรวจสอบ… checking'
+    : corpusLoaded ? '✓ คลังกฎหมายพร้อม · Corpus ready' : '✗ ไม่พบคลังกฎหมาย · Corpus missing';
 
   return (
     <>
@@ -233,7 +250,7 @@ export default function Home() {
         <div className="header-inner">
           <div>
             <h1>RoomWitness</h1>
-            <p className="subtitle">Thai Rental Deposit Dispute Analyzer</p>
+            <p className="subtitle">ตัวช่วยวิเคราะห์ข้อพิพาทเงินประกันการเช่า · Thai Rental Deposit Dispute Analyzer</p>
           </div>
           <div className={corpusPillClass}>{corpusPillText}</div>
         </div>
@@ -244,7 +261,10 @@ export default function Home() {
 
           {/* ── Photos ─────────────────────────── */}
           <section className="card">
-            <h2>Room photos <span className="optional-tag">optional but recommended</span></h2>
+            <h2>
+              รูปถ่ายห้อง <span className="h2-en">Room photos</span>
+              <span className="optional-tag">ไม่บังคับ · optional but recommended</span>
+            </h2>
             <input ref={moveInInputRef}  type="file" accept="image/*" multiple className="dz-input"
               onChange={e => { addMoveIn(e.target.files);  e.target.value = ''; }} />
             <input ref={moveOutInputRef} type="file" accept="image/*" multiple className="dz-input"
@@ -253,7 +273,7 @@ export default function Home() {
             <div className="photo-columns">
               {/* Move-in column */}
               <div className="photo-col">
-                <div className="photo-col-label">Move-in photos</div>
+                <div className="photo-col-label">รูปตอนเข้าอยู่ · Move-in</div>
                 <div className="photo-thumb-grid">
                   {moveInPrevs.map((src, i) => (
                     <div key={i} className="photo-thumb">
@@ -265,14 +285,14 @@ export default function Home() {
                   <button type="button" className="photo-add-btn"
                     onClick={() => moveInInputRef.current?.click()}>
                     <span>+</span>
-                    <span>{moveInFiles.length === 0 ? 'Add photos' : 'Add more'}</span>
+                    <span>{moveInFiles.length === 0 ? 'เพิ่มรูป · Add' : 'เพิ่มอีก · More'}</span>
                   </button>
                 </div>
               </div>
 
               {/* Move-out column */}
               <div className="photo-col">
-                <div className="photo-col-label">Move-out photos</div>
+                <div className="photo-col-label">รูปตอนย้ายออก · Move-out</div>
                 <div className="photo-thumb-grid">
                   {moveOutPrevs.map((src, i) => (
                     <div key={i} className="photo-thumb">
@@ -284,7 +304,7 @@ export default function Home() {
                   <button type="button" className="photo-add-btn"
                     onClick={() => moveOutInputRef.current?.click()}>
                     <span>+</span>
-                    <span>{moveOutFiles.length === 0 ? 'Add photos' : 'Add more'}</span>
+                    <span>{moveOutFiles.length === 0 ? 'เพิ่มรูป · Add' : 'เพิ่มอีก · More'}</span>
                   </button>
                 </div>
               </div>
@@ -297,7 +317,7 @@ export default function Home() {
           {/* ── Extras ─────────────────────────── */}
           <details className="card extras-card">
             <summary className="extras-summary">
-              <span>Additional evidence &amp; context</span>
+              <span>หลักฐานและข้อมูลเพิ่มเติม <span className="lbl-en">Additional evidence &amp; context</span></span>
               {extrasHint && <span className="extras-hint">{extrasHint}</span>}
               <span className="toggle-chevron">›</span>
             </summary>
@@ -305,7 +325,7 @@ export default function Home() {
 
               {/* Rental contract */}
               <div className="extras-section">
-                <div className="extras-section-label">Rental contract</div>
+                <div className="extras-section-label">สัญญาเช่า · Rental contract</div>
                 <div className="contract-upload-row">
                   <DropZone
                     label="Upload PDF or image"
@@ -324,7 +344,7 @@ export default function Home() {
                   />
                   <div className="contract-text-wrap">
                     <div className="contract-extract-row">
-                      <label>Relevant clause</label>
+                      <label>ข้อสัญญาที่เกี่ยวข้อง <span className="lbl-en">Relevant clause</span></label>
                       {contractFile && (
                         <button
                           ref={extractBtnRef}
@@ -345,17 +365,17 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="contract-meta-grid">
-                  <div className="field"><label>Lease start</label><input type="date" value={leaseStart} onChange={e => setLeaseStart(e.target.value)} /></div>
-                  <div className="field"><label>Lease end</label><input type="date" value={leaseEnd} onChange={e => setLeaseEnd(e.target.value)} /></div>
-                  <div className="field"><label>Deposit paid (THB)</label><input type="number" min="0" placeholder="e.g. 10000" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} /></div>
-                  <div className="field"><label>Monthly rent (THB)</label><input type="number" min="0" placeholder="e.g. 5000" value={monthlyRent} onChange={e => setMonthlyRent(e.target.value)} /></div>
-                  <div className="field"><label>Landlord units (0=unknown)</label><input type="number" min="0" placeholder="e.g. 5" value={unitCount} onChange={e => setUnitCount(e.target.value)} /></div>
+                  <div className="field"><label>วันเริ่มสัญญา <span className="lbl-en">Lease start</span></label><input type="date" value={leaseStart} onChange={e => setLeaseStart(e.target.value)} /></div>
+                  <div className="field"><label>วันสิ้นสุดสัญญา <span className="lbl-en">Lease end</span></label><input type="date" value={leaseEnd} onChange={e => setLeaseEnd(e.target.value)} /></div>
+                  <div className="field"><label>เงินประกันที่จ่าย (บาท) <span className="lbl-en">Deposit paid</span></label><input type="number" min="0" placeholder="e.g. 10000" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} /></div>
+                  <div className="field"><label>ค่าเช่าต่อเดือน (บาท) <span className="lbl-en">Monthly rent</span></label><input type="number" min="0" placeholder="e.g. 5000" value={monthlyRent} onChange={e => setMonthlyRent(e.target.value)} /></div>
+                  <div className="field"><label>จำนวนห้องของเจ้าของ (0=ไม่ทราบ) <span className="lbl-en">Landlord units</span></label><input type="number" min="0" placeholder="e.g. 5" value={unitCount} onChange={e => setUnitCount(e.target.value)} /></div>
                 </div>
               </div>
 
               {/* Screenshots */}
               <div className="extras-section">
-                <div className="extras-section-label">Conversation screenshots</div>
+                <div className="extras-section-label">ภาพหน้าจอบทสนทนา · Conversation screenshots</div>
                 <div
                   className="screenshot-dz"
                   onClick={() => screenshotInputRef.current?.click()}
@@ -373,9 +393,9 @@ export default function Home() {
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28">
                         <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />
                       </svg>
-                      <strong>LINE / WhatsApp / SMS screenshots</strong>
-                      <span>Multiple files OK</span>
-                      <button type="button" className="btn-secondary" onClick={e => { e.stopPropagation(); screenshotInputRef.current?.click(); }}>Browse</button>
+                      <strong>ภาพแชท LINE / WhatsApp / SMS</strong>
+                      <span>เลือกได้หลายไฟล์ · Multiple files OK</span>
+                      <button type="button" className="btn-secondary" onClick={e => { e.stopPropagation(); screenshotInputRef.current?.click(); }}>เลือกไฟล์ · Browse</button>
                     </div>
                   ) : (
                     <div className="screenshot-grid">
@@ -396,14 +416,14 @@ export default function Home() {
 
               {/* Promises */}
               <div className="extras-section">
-                <div className="extras-section-label">Written promises / statements</div>
+                <div className="extras-section-label">คำสัญญา / ข้อความที่เขียนไว้ · Written promises</div>
                 <div className="two-col">
                   <div className="field">
-                    <label>Landlord said / promised</label>
+                    <label>เจ้าของบ้านพูด / สัญญาไว้ <span className="lbl-en">Landlord said / promised</span></label>
                     <textarea rows={4} placeholder={"One per line.\ne.g. \"I will return deposit in full if room is clean\""} value={landlordPromises} onChange={e => setLandlordPromises(e.target.value)} />
                   </div>
                   <div className="field">
-                    <label>Tenant said / promised</label>
+                    <label>ผู้เช่าพูด / สัญญาไว้ <span className="lbl-en">Tenant said / promised</span></label>
                     <textarea rows={4} placeholder={"One per line.\ne.g. \"Wall scuff was already there at move-in\""} value={tenantPromises} onChange={e => setTenantPromises(e.target.value)} />
                   </div>
                 </div>
@@ -413,7 +433,9 @@ export default function Home() {
 
           <div className="submit-row">
             <button type="submit" disabled={running}>
-              {running ? 'Running…' : 'Analyze dispute'}
+              {running
+                ? <><span className="spinner-btn" />กำลังวิเคราะห์… {elapsed}s</>
+                : <>วิเคราะห์ข้อพิพาท · Analyze dispute</>}
             </button>
           </div>
         </form>
@@ -428,6 +450,7 @@ export default function Home() {
             results={results}
             moveInPreviews={moveInPrevs}
             moveOutPreviews={moveOutPrevs}
+            depositAmount={depositAmount}
           />
         )}
       </main>

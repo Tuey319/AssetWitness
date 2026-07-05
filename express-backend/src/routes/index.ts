@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import axios from 'axios';
 import { config } from '../config';
-import upload from '../middleware/upload';
+import upload, { agent01Fields, agent02Fields, fullAnalysisFields } from '../middleware/upload';
 import * as agentController from '../controllers/agentController';
 import * as extractController from '../controllers/extractController';
 import { runFullAnalysis } from '../controllers/fullAnalysisController';
@@ -20,15 +20,12 @@ router.get('/health', async (_req, res) => {
   }
 });
 
-router.post(
-  '/run/agent01',
-  upload.fields([{ name: 'move_in', maxCount: 10 }, { name: 'move_out', maxCount: 10 }]),
-  agentController.runAgent01,
-);
-
-router.post('/run/agent02', upload.single('contract_file'), agentController.runAgent02);
+router.post('/run/agent01', upload.fields(agent01Fields), agentController.runAgent01);
+router.post('/run/agent02', upload.fields(agent02Fields), agentController.runAgent02);
 router.post('/run/agent03', agentController.runAgent03);
 router.post('/run/agent04', agentController.runAgent04);
+
+router.post('/generate-documents', agentController.generateDocuments);
 
 router.get('/download/:caseId/:docType', async (req, res, next) => {
   try {
@@ -45,10 +42,6 @@ router.get('/download/:caseId/:docType', async (req, res, next) => {
 
 router.post('/extract-contract', upload.single('contract_file'), extractController.extractContract);
 
-router.post(
-  '/full-analysis',
-  upload.fields([{ name: 'move_in_image', maxCount: 10 }, { name: 'move_out_image', maxCount: 10 }]),
-  runFullAnalysis,
-);
+router.post('/full-analysis', upload.fields(fullAnalysisFields), runFullAnalysis);
 
 export default router;

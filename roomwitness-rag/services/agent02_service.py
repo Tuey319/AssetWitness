@@ -11,7 +11,7 @@ import os
 import tempfile
 import traceback
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import List, Optional
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -47,15 +47,75 @@ def health():
     return {"status": "ok", "agent": "02"}
 
 
+async def _extract_chat_evidence(
+    screenshots: List[UploadFile],
+    manual_landlord: str,
+    manual_tenant: str,
+) -> dict:
+    """
+    OCR conversation screenshots (Groq Llama-4-Scout via agent01_cv.evidence)
+    and merge with manually typed promises. Always returns the four evidence
+    fields so the response schema is stable.
+    """
+    evidence = {
+        "landlord_promises": [],
+        "tenant_promises":   [],
+        "deposit_mentions":  [],
+        "platforms":         [],
+    }
+    valid = [f for f in (screenshots or []) if f and f.filename]
+    if not valid and not manual_landlord.strip() and not manual_tenant.strip():
+        return evidence
+
+    tmp_paths: list[str] = []
+    try:
+        for i, upload in enumerate(valid):
+            ext = os.path.splitext(upload.filename)[1].lower() or ".jpg"
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f"_ss{i}{ext}")
+            tmp.write(await upload.read())
+            tmp.close()
+            tmp_paths.append(tmp.name)
+
+        from agent01_cv import run_evidence_analysis
+        raw = run_evidence_analysis(
+            screenshot_paths=tmp_paths,
+            manual_landlord_promises=manual_landlord,
+            manual_tenant_promises=manual_tenant,
+        )
+        evidence["landlord_promises"] = raw.get("all_landlord_promises", [])
+        evidence["tenant_promises"]   = raw.get("all_tenant_promises", [])
+        evidence["deposit_mentions"]  = raw.get("all_deposit_mentions", [])
+        evidence["platforms"]         = raw.get("platforms_detected", [])
+    except Exception:
+        traceback.print_exc()
+        # Groq unavailable or extraction failed — keep the manual statements
+        evidence["landlord_promises"] = [
+            ln.strip("•-– ").strip() for ln in manual_landlord.splitlines() if ln.strip()
+        ]
+        evidence["tenant_promises"] = [
+            ln.strip("•-– ").strip() for ln in manual_tenant.splitlines() if ln.strip()
+        ]
+    finally:
+        for p in tmp_paths:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+    return evidence
+
+
 @app.post("/api/v1/agent02")
 async def run_agent02(
     contract_file:   Optional[UploadFile] = File(None),
+    screenshots:     List[UploadFile] = File(default=[]),
     claims:          str = Form("[]"),
     contract_clause: str = Form(""),
     lease_start:     str = Form(""),
     lease_end:       str = Form(""),
     deposit_amount:  str = Form("0"),
     monthly_rent:    str = Form("0"),
+    manual_landlord_promises: str = Form(""),
+    manual_tenant_promises:   str = Form(""),
 ):
     if _llm is None:
         return JSONResponse({"error": "LLM not initialised"}, status_code=503)
@@ -64,6 +124,11 @@ async def run_agent02(
         claim_list = json.loads(claims)
     except (ValueError, TypeError):
         claim_list = []
+
+    # ── Chat-screenshot evidence (OCR via Groq Llama-4-Scout) ─────────
+    evidence = await _extract_chat_evidence(
+        screenshots, manual_landlord_promises, manual_tenant_promises,
+    )
 
     # ── Extract PDF text ──────────────────────────────────────────────
     lease_text = contract_clause.strip()
@@ -128,8 +193,9 @@ async def run_agent02(
                 "monthly_rent_thb": rent,
             },
             "unfair_clauses": [],
-            "ocr_used": False,
+            "ocr_used": bool(evidence["platforms"]),
             "extraction_confidence": 0.0,
+            **evidence,
         }
 
     # ── Call Typhoon v2 ───────────────────────────────────────────────
@@ -174,6 +240,7 @@ async def run_agent02(
         "liability_map":         liability_map,
         "contract_summary":      summary,
         "unfair_clauses":        parsed.get("unfair_clauses", []),
-        "ocr_used":              False,
+        "ocr_used":              bool(evidence["platforms"]),
         "extraction_confidence": 0.94,
+        **evidence,
     }
