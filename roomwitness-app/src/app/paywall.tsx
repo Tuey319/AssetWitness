@@ -6,11 +6,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/lib/store';
 import { getColors } from '@/lib/theme';
 
-const INCLUDED = [
-  { icon: Camera,   label: 'AI photo comparison (move-in vs move-out)' },
-  { icon: Scale,    label: 'Thai legal classification per claim (ป.พ.พ. + OCPB)' },
-  { icon: FileText, label: '3 ready-to-file documents: OCPB complaint, demand letter, evidence summary' },
+// Itemized like a real API bill — each agent call is metered, summing to the flat ฿99.
+const LINE_ITEMS = [
+  { icon: Camera,   label: 'CV photo comparison',        sub: 'move-in vs move-out · Llama-4-Scout', price: 25 },
+  { icon: FileText, label: 'Contract clause parsing',    sub: 'lease OCR + extraction',              price: 20 },
+  { icon: Scale,    label: 'Legal classification',       sub: 'per claim · ป.พ.พ. + OCPB RAG',        price: 24 },
+  { icon: FileText, label: 'Document generation',        sub: '3 ready-to-file Thai documents',       price: 30 },
 ];
+const TOTAL_PRICE = LINE_ITEMS.reduce((s, i) => s + i.price, 0);
 
 export default function PaywallScreen() {
   const C = getColors(useStore(s => s.theme));
@@ -65,16 +68,27 @@ export default function PaywallScreen() {
               <Text style={{ fontSize: 11, color: C.amber, fontWeight: '700' }}>ONE-TIME</Text>
             </View>
           </View>
-          <Text style={{ fontSize: 40, fontWeight: '900', color: C.ink, letterSpacing: -2, marginBottom: 16 }}>฿99</Text>
-          {INCLUDED.map((f, i) => {
+          <Text style={{ fontSize: 40, fontWeight: '900', color: C.ink, letterSpacing: -2, marginBottom: 16 }}>฿{TOTAL_PRICE}</Text>
+
+          {LINE_ITEMS.map((f, i) => {
             const Icon = f.icon;
             return (
-              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: i < INCLUDED.length - 1 ? 12 : 0 }}>
-                <Icon size={16} color={C.ok} strokeWidth={2} />
-                <Text style={{ flex: 1, fontSize: 13, color: C.ink2, lineHeight: 18 }}>{f.label}</Text>
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: C.border2 }}>
+                <View style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: C.okBg, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon size={14} color={C.ok} strokeWidth={2} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, color: C.ink, fontWeight: '600' }}>{f.label}</Text>
+                  <Text style={{ fontSize: 11, color: C.ink3, marginTop: 1 }}>{f.sub}</Text>
+                </View>
+                <Text style={{ fontSize: 13, color: C.ink2, fontWeight: '700' }}>฿{f.price}</Text>
               </View>
             );
           })}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border }}>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: C.ink }}>Total, billed once</Text>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: C.ink }}>฿{TOTAL_PRICE}</Text>
+          </View>
         </View>
 
         <Pressable onPress={pay} disabled={paying}

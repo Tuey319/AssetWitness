@@ -35,7 +35,7 @@ export default function MoveInPage() {
       photoDataUrls: prevs,
     });
     alert("Saved — free. We'll keep these until you move out, even a year from now.");
-    router.push('/');
+    router.push('/app');
   };
 
   return (
