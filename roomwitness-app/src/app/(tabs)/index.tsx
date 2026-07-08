@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import {
-  Bell, Camera, ChevronRight, Clock, Droplet, FileText, Heart,
-  Paintbrush, PlugZap, PlusCircle, Scale, Search, Sofa, Sparkles, SquareStack,
+  Bell, Camera, CheckCircle2, ChevronRight, Clock, Droplet, FileText, Heart,
+  Paintbrush, PlugZap, PlusCircle, Scale, Search, ShieldCheck, Sofa, Sparkles, SquareStack,
 } from 'lucide-react-native';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -38,11 +38,13 @@ function greeting() {
 }
 
 export default function HomeScreen() {
-  const theme   = useStore(s => s.theme);
-  const profile = useStore(s => s.profile);
+  const theme         = useStore(s => s.theme);
+  const profile       = useStore(s => s.profile);
+  const moveInRecords = useStore(s => s.moveInRecords);
   const C       = getColors(theme);
   const firstName = profile.nameTh ? profile.nameTh.split(' ')[0] : 'there';
   const activeCase = RECENT_CASES[0]; // most recent / in-progress case
+  const hasMoveIn = moveInRecords.length > 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
@@ -84,30 +86,54 @@ export default function HomeScreen() {
           <Text style={{ fontSize: 14, color: C.ink3 }}>Search cases, claim types…</Text>
         </Pressable>
 
-        {/* ── Banner: start new case ───────────────────────── */}
-        <View style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: C.surface, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', position: 'relative' }}>
-          <View style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: 45, backgroundColor: C.amberGlow }} />
-          <View style={{ flex: 1, paddingRight: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-              <Sparkles size={12} color={C.amber} strokeWidth={2} />
-              <Text style={{ fontSize: 10, color: C.amber, fontWeight: '700', letterSpacing: 0.5 }}>AI-POWERED</Text>
+        {/* ── Banner: free move-in vault vs paid claim ─────── */}
+        {hasMoveIn ? (
+          <View style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: C.surface, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', position: 'relative' }}>
+            <View style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: 45, backgroundColor: C.amberGlow }} />
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+                <ShieldCheck size={12} color={C.ok} strokeWidth={2} />
+                <Text style={{ fontSize: 10, color: C.ok, fontWeight: '700', letterSpacing: 0.5 }}>
+                  {moveInRecords.length} MOVE-IN RECORD{moveInRecords.length !== 1 ? 'S' : ''} SAVED
+                </Text>
+              </View>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink, lineHeight: 20 }}>
+                Moving out? File your deposit claim — pay only if you dispute something
+              </Text>
             </View>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink, lineHeight: 20 }}>
-              We'll review your deposit claim in 90 seconds
-            </Text>
+            <Pressable
+              onPress={() => router.push('/new-case')}
+              style={{ backgroundColor: C.amber, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: '800', color: '#0C0A07' }}>Start Claim</Text>
+            </Pressable>
           </View>
-          <Pressable
-            onPress={() => router.push('/new-case')}
-            style={{ backgroundColor: C.amber, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 }}
-          >
-            <Text style={{ fontSize: 13, fontWeight: '800', color: '#0C0A07' }}>New Case</Text>
-          </Pressable>
-        </View>
+        ) : (
+          <View style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: C.surface, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', position: 'relative' }}>
+            <View style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: 45, backgroundColor: C.amberGlow }} />
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+                <Sparkles size={12} color={C.amber} strokeWidth={2} />
+                <Text style={{ fontSize: 10, color: C.amber, fontWeight: '700', letterSpacing: 0.5 }}>FREE · TAKES 2 MINUTES</Text>
+              </View>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink, lineHeight: 20 }}>
+                Just moved in? Document it now, free — for whenever you need it
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => router.push('/move-in')}
+              style={{ backgroundColor: C.amber, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: '800', color: '#0C0A07' }}>Document Move-In</Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* ── Quick actions ─────────────────────────────────── */}
         <View style={{ flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginBottom: 24 }}>
           {[
-            { icon: PlusCircle, label: 'New Case', onPress: () => router.push('/new-case') },
+            { icon: hasMoveIn ? CheckCircle2 : ShieldCheck, label: 'Move-In', onPress: () => router.push('/move-in') },
+            { icon: PlusCircle, label: 'File a Claim', onPress: () => router.push('/new-case') },
             { icon: FileText,   label: 'Documents', onPress: () => router.push('/(tabs)/history') },
             { icon: Scale,      label: 'Legal Info', onPress: () => router.push('/(tabs)/profile') },
           ].map((a, i) => {

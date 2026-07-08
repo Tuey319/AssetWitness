@@ -30,7 +30,9 @@ export default function RootLayout() {
       <StatusBar barStyle="light-content" backgroundColor="#0C0A07" />
       <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: '#0C0A07' } }}>
         <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
+        <Stack.Screen name="move-in" />
         <Stack.Screen name="new-case" />
+        <Stack.Screen name="paywall" />
         <Stack.Screen name="analyzing" />
         <Stack.Screen name="results" />
         <Stack.Screen name="details" />

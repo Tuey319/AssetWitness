@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ArrowRight, Camera, ChevronLeft, ImagePlus, Plus, X } from 'lucide-react-native';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert, Animated, Dimensions, Image, KeyboardAvoidingView,
   Platform, Pressable, ScrollView, Text, TextInput, View,
@@ -106,11 +106,14 @@ function PhotoStrip({ label, uris, onAdd, onRemove }: { label: string; uris: str
 }
 
 export default function NewCaseScreen() {
-  const setForm = useStore(s => s.setForm);
-  const theme   = useStore(s => s.theme);
+  const setForm         = useStore(s => s.setForm);
+  const setUnlockedClaim = useStore(s => s.setUnlockedClaim);
+  const theme           = useStore(s => s.theme);
+  const moveInRecords   = useStore(s => s.moveInRecords);
   const C       = getColors(theme);
   const [claims, setClaims]   = useState<Row[]>([newRow()]);
-  const [moveIn, setIn]       = useState<string[]>([]);
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(moveInRecords[0]?.id ?? null);
+  const [moveIn, setIn]       = useState<string[]>(moveInRecords[0]?.photoUris ?? []);
   const [moveOut, setOut]     = useState<string[]>([]);
   const [shots, setShots]     = useState<string[]>([]);
   const [clause, setClause]   = useState('');
@@ -123,6 +126,15 @@ export default function NewCaseScreen() {
   const [units, setUnits]     = useState('');
   const [step, setStep]       = useState(0);
   const slideX = useRef(new Animated.Value(0)).current;
+
+  // Each new claim needs its own payment — don't inherit a previous claim's unlock.
+  useEffect(() => { setUnlockedClaim(false); }, []);
+
+  function selectRecord(id: string | null) {
+    setSelectedRecordId(id);
+    const rec = id ? moveInRecords.find(r => r.id === id) : undefined;
+    setIn(rec ? rec.photoUris : []);
+  }
 
   function goTo(next: number) {
     slideX.setValue((next > step ? 1 : -1) * W);
@@ -153,7 +165,9 @@ export default function NewCaseScreen() {
       monthlyRent: rent ? Number(rent) : undefined,
       landlordUnitCount: units ? Number(units) : undefined,
     });
-    router.push('/analyzing');
+    // The AI analysis + documents are the paid step — gate it here rather
+    // than at upload/claim-entry time, which stay free.
+    router.push('/paywall');
   }
 
   const update = (id: number, p: Partial<LandlordClaim>) => setClaims(prev => prev.map(c => c.id === id ? { ...c, ...p } : c));
@@ -256,7 +270,48 @@ export default function NewCaseScreen() {
                 </View>
 
                 <View style={{ backgroundColor: C.surface, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: C.border, gap: 20 }}>
-                  <PhotoStrip label="Move-in photos (before tenancy)" uris={moveIn} onAdd={u => setIn(p => [...p, u])} onRemove={i => setIn(p => p.filter((_, j) => j !== i))} />
+                  {moveInRecords.length > 0 ? (
+                    <View>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink3, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 }}>
+                        Move-in photos — from your saved record
+                      </Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                          {moveInRecords.map(r => {
+                            const active = r.id === selectedRecordId;
+                            return (
+                              <Pressable key={r.id} onPress={() => selectRecord(active ? null : r.id)}
+                                style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: active ? C.ok : C.surface2, borderWidth: 1, borderColor: active ? C.ok : C.border }}>
+                                <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#FFFFFF' : C.ink2 }}>
+                                  {r.label} · {r.photoUris.length} photo{r.photoUris.length !== 1 ? 's' : ''}
+                                </Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      </ScrollView>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <View style={{ flexDirection: 'row', gap: 10, paddingRight: 4 }}>
+                          {moveIn.map((uri, i) => (
+                            <Image key={i} source={{ uri }} style={{ width: 88, height: 88, borderRadius: 14 }} resizeMode="cover" />
+                          ))}
+                          {moveIn.length === 0 && (
+                            <Text style={{ fontSize: 12, color: C.ink3, paddingVertical: 8 }}>No move-in record selected — tap one above.</Text>
+                          )}
+                        </View>
+                      </ScrollView>
+                    </View>
+                  ) : (
+                    <View>
+                      <PhotoStrip label="Move-in photos (before tenancy)" uris={moveIn} onAdd={u => setIn(p => [...p, u])} onRemove={i => setIn(p => p.filter((_, j) => j !== i))} />
+                      <Pressable onPress={() => router.push('/move-in')}
+                        style={{ marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={{ fontSize: 12, color: C.blue, fontWeight: '600' }}>
+                          Tip: next time, save move-in photos for free the day you move in →
+                        </Text>
+                      </Pressable>
+                    </View>
+                  )}
                   <View style={{ height: 1, backgroundColor: C.border2 }} />
                   <PhotoStrip label="Move-out photos (when you left)" uris={moveOut} onAdd={u => setOut(p => [...p, u])} onRemove={i => setOut(p => p.filter((_, j) => j !== i))} />
                 </View>
@@ -370,7 +425,7 @@ export default function NewCaseScreen() {
         ) : (
           <Pressable onPress={submit}
             style={{ backgroundColor: C.amber, borderRadius: 16, paddingVertical: 17, alignItems: 'center' }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', letterSpacing: -0.3 }}>Analyze with AI →</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', letterSpacing: -0.3 }}>Continue to unlock AI analysis →</Text>
           </Pressable>
         )}
         {step === 2 && (

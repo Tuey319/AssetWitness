@@ -27,8 +27,9 @@ function RingSpinner({ color }: { color: string }) {
 }
 
 export default function AnalyzingScreen() {
-  const form      = useStore(s => s.form);
-  const setResult = useStore(s => s.setResult);
+  const form          = useStore(s => s.form);
+  const setResult     = useStore(s => s.setResult);
+  const unlockedClaim = useStore(s => s.unlockedClaim);
   const theme     = useStore(s => s.theme);
   const C         = getColors(theme);
   const [step, setStep]   = useState(0);
@@ -45,6 +46,7 @@ export default function AnalyzingScreen() {
 
   useEffect(() => {
     if (!form) { router.replace('/'); return; }
+    if (!unlockedClaim) { router.replace('/paywall'); return; }
 
     // Advance step indicator every 4s while waiting
     const timers = [

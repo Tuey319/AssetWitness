@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, DragEvent, ChangeEvent } from 'react';
+import Link from 'next/link';
 import DropZone from '@/components/DropZone';
 import ClaimsList from '@/components/ClaimsList';
 import Pipeline from '@/components/Pipeline';
 import { Claim, PipelineResults, StepState } from '@/types';
+import { getMoveInRecords, dataUrlToFile, MoveInRecord } from '@/lib/moveInVault';
 
 const IDLE_STEPS: StepState[] = ['idle', 'idle', 'idle', 'idle'];
 
@@ -39,6 +41,26 @@ export default function Home() {
   const [showPipeline, setShowPipeline] = useState(false);
   const [steps,   setSteps]   = useState<StepState[]>(IDLE_STEPS);
   const [results, setResults] = useState<PipelineResults>({});
+
+  // ── Move-in vault (free, saved earlier) + paywall (paid claim step) ──
+  const [moveInRecords, setMoveInRecords] = useState<MoveInRecord[]>([]);
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const [unlockedClaim, setUnlockedClaim] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  useEffect(() => {
+    const records = getMoveInRecords();
+    setMoveInRecords(records);
+    if (records[0]) selectRecord(records[0].id, records);
+  }, []);
+
+  const selectRecord = (id: string | null, records = moveInRecords) => {
+    setSelectedRecordId(id);
+    const rec = id ? records.find(r => r.id === id) : undefined;
+    if (!rec) { setMoveInFiles([]); setMoveInPrevs([]); return; }
+    setMoveInPrevs(rec.photoDataUrls);
+    Promise.all(rec.photoDataUrls.map((u, i) => dataUrlToFile(u, `movein_${i}.jpg`))).then(setMoveInFiles);
+  };
 
   const extractBtnRef    = useRef<HTMLButtonElement>(null);
   const screenshotInputRef = useRef<HTMLInputElement>(null);
@@ -141,12 +163,23 @@ export default function Home() {
     setSteps(prev => prev.map((s, idx) => idx === i ? state : s));
 
   // ── Submit ────────────────────────────────────────────────────────
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const validClaims = claims.filter(c => c.item.trim());
     if (!validClaims.length) { setError('Add at least one claim.'); return; }
-
     setError(null);
+    // Upload + claim entry are free; running the AI + generating documents is the paid step.
+    if (!unlockedClaim) { setShowPaywall(true); return; }
+    runPipeline(validClaims);
+  };
+
+  const pay = () => {
+    setUnlockedClaim(true);
+    setShowPaywall(false);
+    runPipeline(claims.filter(c => c.item.trim()));
+  };
+
+  const runPipeline = async (validClaims: Claim[]) => {
     setRunning(true);
     setShowPipeline(true);
     setSteps(IDLE_STEPS);
@@ -274,20 +307,40 @@ export default function Home() {
               {/* Move-in column */}
               <div className="photo-col">
                 <div className="photo-col-label">รูปตอนเข้าอยู่ · Move-in</div>
+                {moveInRecords.length > 0 && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {moveInRecords.map(r => (
+                      <button key={r.id} type="button" className="btn-secondary"
+                        style={selectedRecordId === r.id ? { borderColor: 'var(--green)', color: 'var(--green)' } : undefined}
+                        onClick={() => selectRecord(selectedRecordId === r.id ? null : r.id)}>
+                        {r.label} · {r.photoDataUrls.length}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="photo-thumb-grid">
                   {moveInPrevs.map((src, i) => (
                     <div key={i} className="photo-thumb">
                       <img src={src} alt="" />
-                      <div className="dz-filename">{moveInFiles[i]?.name}</div>
-                      <button type="button" className="thumb-remove" onClick={() => removeMoveIn(i)}>✕</button>
+                      {moveInRecords.length === 0 && <div className="dz-filename">{moveInFiles[i]?.name}</div>}
+                      {moveInRecords.length === 0 && (
+                        <button type="button" className="thumb-remove" onClick={() => removeMoveIn(i)}>✕</button>
+                      )}
                     </div>
                   ))}
-                  <button type="button" className="photo-add-btn"
-                    onClick={() => moveInInputRef.current?.click()}>
-                    <span>+</span>
-                    <span>{moveInFiles.length === 0 ? 'เพิ่มรูป · Add' : 'เพิ่มอีก · More'}</span>
-                  </button>
+                  {moveInRecords.length === 0 && (
+                    <button type="button" className="photo-add-btn"
+                      onClick={() => moveInInputRef.current?.click()}>
+                      <span>+</span>
+                      <span>{moveInFiles.length === 0 ? 'เพิ่มรูป · Add' : 'เพิ่มอีก · More'}</span>
+                    </button>
+                  )}
                 </div>
+                {moveInRecords.length === 0 && (
+                  <Link href="/move-in" style={{ fontSize: 12, color: '#4a90d9', marginTop: 6, display: 'inline-block' }}>
+                    Tip: save move-in photos for free the day you move in →
+                  </Link>
+                )}
               </div>
 
               {/* Move-out column */}
@@ -439,6 +492,20 @@ export default function Home() {
             </button>
           </div>
         </form>
+
+        {showPaywall && (
+          <section className="card">
+            <h2>ปลดล็อกการวิเคราะห์ AI <span className="h2-en">Unlock AI analysis — ฿99</span></h2>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+              Uploading photos and entering claims is free. Running the CV comparison, legal
+              classification, and document generation is the paid step — one time, per claim.
+            </p>
+            <div className="submit-row" style={{ gap: 8 }}>
+              <button type="button" className="btn-secondary" onClick={() => setShowPaywall(false)}>Cancel</button>
+              <button type="button" onClick={pay}>Pay ฿99 &amp; analyze</button>
+            </div>
+          </section>
+        )}
 
         {error && (
           <div className="error-banner">⚠ {error}</div>

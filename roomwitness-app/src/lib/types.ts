@@ -4,6 +4,18 @@ export interface LandlordClaim {
   amount_thb: number;
 }
 
+/**
+ * A free, no-AI move-in photo record saved on-device at lease start. Kept around
+ * (potentially up to a year) so the tenant doesn't have to re-shoot move-in
+ * evidence when they file a paid claim at move-out.
+ */
+export interface MoveInRecord {
+  id: string;
+  createdAt: string;
+  label: string;
+  photoUris: string[];
+}
+
 export interface CV {
   move_in_condition: string;
   move_out_condition: string;
