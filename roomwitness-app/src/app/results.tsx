@@ -1,10 +1,18 @@
 import { router } from 'expo-router';
 import { ChevronDown, ChevronUp, FileText, Scale, TriangleAlert } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/lib/store';
 import { getColors } from '@/lib/theme';
+import type { FullAnalysis } from '@/lib/types';
+
+function worstVerdict(result: FullAnalysis): 'LAWFUL' | 'DISPUTED' | 'UNLAWFUL' {
+  const classes = result.claims.map(c => c.legal.classification);
+  if (classes.includes('UNLAWFUL')) return 'UNLAWFUL';
+  if (classes.includes('DISPUTED')) return 'DISPUTED';
+  return 'LAWFUL';
+}
 
 function VerdictBadge({ v }: { v: 'LAWFUL' | 'DISPUTED' | 'UNLAWFUL' }) {
   const C = getColors(useStore(s => s.theme));
@@ -68,7 +76,7 @@ function ClaimRow({ item }: { item: any }) {
         <View style={{ paddingHorizontal: 16, marginBottom: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {legal.legal_basis.map((b: any, i: number) => (
             <View key={i} style={{ backgroundColor: C.amberSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
-              <Text style={{ fontSize: 11, color: C.amber, fontWeight: '600' }}>{b.section}</Text>
+              <Text style={{ fontSize: 11, color: C.amberDark, fontWeight: '600' }}>{b.section}</Text>
             </View>
           ))}
         </View>
@@ -89,8 +97,8 @@ function ClaimRow({ item }: { item: any }) {
       {/* Toggle */}
       <Pressable onPress={() => setOpen(v => !v)} hitSlop={12}
         style={{ paddingHorizontal: 16, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-        {open ? <ChevronUp size={14} color={C.amber} strokeWidth={2.5} /> : <ChevronDown size={14} color={C.amber} strokeWidth={2.5} />}
-        <Text style={{ fontSize: 13, color: C.amber, fontWeight: '600' }}>
+        {open ? <ChevronUp size={14} color={C.amberDark} strokeWidth={2.5} /> : <ChevronDown size={14} color={C.amberDark} strokeWidth={2.5} />}
+        <Text style={{ fontSize: 13, color: C.amberDark, fontWeight: '600' }}>
           {open ? 'Hide reasoning' : 'View full reasoning'}
         </Text>
       </Pressable>
@@ -115,9 +123,26 @@ function ClaimRow({ item }: { item: any }) {
 }
 
 export default function ResultsScreen() {
-  const theme  = useStore(s => s.theme);
-  const C      = getColors(theme);
-  const result = useStore(s => s.result);
+  const theme   = useStore(s => s.theme);
+  const C       = getColors(theme);
+  const result  = useStore(s => s.result);
+  const addCase = useStore(s => s.addCase);
+  const saved   = useRef(false);
+
+  useEffect(() => {
+    if (!result || saved.current) return;
+    saved.current = true;
+    addCase({
+      id: `RW-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      items: result.claims.map(c => c.claim.item).filter(Boolean),
+      totalCharged: result.total_claimed_thb || result.claims.reduce((s, c) => s + c.claim.amount_thb, 0),
+      totalRecoverable: result.total_unlawful_thb || result.claims
+        .filter(c => c.legal.classification !== 'LAWFUL')
+        .reduce((s, c) => s + c.claim.amount_thb, 0),
+      verdict: worstVerdict(result),
+    });
+  }, [result]);
 
   if (!result) {
     return (
@@ -168,7 +193,7 @@ export default function ResultsScreen() {
           <View style={{ backgroundColor: C.surface, borderRadius: 20, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: C.border }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center' }}>
-                <FileText size={14} color={C.amber} strokeWidth={2} />
+                <FileText size={14} color={C.amberDark} strokeWidth={2} />
               </View>
               <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink }}>Contract Parser</Text>
             </View>
@@ -212,7 +237,7 @@ export default function ResultsScreen() {
 
         <Pressable
           onPress={() => router.push('/details')}
-          style={{ backgroundColor: C.amber, borderRadius: 16, paddingVertical: 17, alignItems: 'center', marginBottom: 8 }}>
+          style={{ backgroundColor: C.amberDark, borderRadius: 16, paddingVertical: 17, alignItems: 'center', marginBottom: 8 }}>
           <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Generate documents →</Text>
         </Pressable>
       </ScrollView>

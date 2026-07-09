@@ -12,7 +12,7 @@ const TOTAL_PRICE = LINE_ITEMS.reduce((s, i) => s + i.price, 0);
 const HOW_IT_WORKS = [
   { n: '1', tag: 'FREE', accent: 'var(--blue)',   title: 'Document your move-in', body: 'Photograph the unit the day you get your keys. Saved on your device — no account, no upload cost.' },
   { n: '2', tag: 'FREE', accent: 'var(--green)',  title: 'File your claim',        body: 'Up to a year later at move-out: add photos, list what the landlord is charging, attach evidence.' },
-  { n: '3', tag: '฿99',  accent: 'var(--amber)',  title: 'Unlock AI analysis',     body: 'Pay once, only when you actually dispute something. CV comparison, legal classification, 3 ready-to-file documents.' },
+  { n: '3', tag: '฿99',  accent: 'var(--amber-dark)',  title: 'Unlock AI analysis',     body: 'Pay once, only when you actually dispute something. CV comparison, legal classification, 3 ready-to-file documents.' },
 ];
 
 export default function LandingPage() {
@@ -45,7 +45,7 @@ export default function LandingPage() {
             </Link>
             <Link href="/app" style={{ textDecoration: 'none' }}>
               <span style={{
-                display: 'inline-block', background: 'var(--amber)', color: '#fff', borderRadius: 16,
+                display: 'inline-block', background: 'var(--amber-dark)', color: '#fff', borderRadius: 16,
                 padding: '0.7rem 1.6rem', fontWeight: 800, fontSize: 14, boxShadow: '0 6px 16px var(--amber-shadow)',
               }}>
                 File a claim →

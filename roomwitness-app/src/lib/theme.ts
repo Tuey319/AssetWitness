@@ -10,6 +10,7 @@ export interface Colors {
   ink3: string;
   ink4: string;
   amber: string;
+  amberDark: string;
   amberSoft: string;
   amberGlow: string;
   border: string;
@@ -37,9 +38,10 @@ export const LIGHT: Colors = {
   surface3:    '#F5E6D3',
   ink:         '#211C2B',
   ink2:        '#6B6477',
-  ink3:        '#A79FB0',
+  ink3:        '#756D82',   // WCAG AA-safe muted tone (4.9:1 on white, 3.6:1 on peach bg)
   ink4:        '#D8CFDE',
-  amber:       '#E07A3F',   // primary accent — burnt orange
+  amber:       '#E07A3F',   // primary accent — burnt orange (icons/text-on-white, not button fills)
+  amberDark:   '#C6672F',   // solid-fill buttons — white text on `amber` only hits 2.99:1 contrast
   amberSoft:   'rgba(224,122,63,0.10)',
   amberGlow:   'rgba(224,122,63,0.10)',
   border:      '#EAD9C4',
@@ -66,9 +68,10 @@ export const DARK: Colors = {
   surface3:    '#3C3447',
   ink:         '#F8EFE5',
   ink2:        'rgba(248,239,229,0.58)',
-  ink3:        'rgba(248,239,229,0.32)',
+  ink3:        'rgba(248,239,229,0.55)', // was 0.32 — too low contrast (~2.7:1); 0.55 clears AA
   ink4:        'rgba(248,239,229,0.16)',
   amber:       '#EC8E5C',   // primary accent — warm orange (lighter for dark bg)
+  amberDark:   '#C6672F',   // solid-fill buttons — white text on `amber` only hits 2.44:1 contrast
   amberSoft:   'rgba(236,142,92,0.12)',
   amberGlow:   'rgba(236,142,92,0.08)',
   border:      'rgba(236,142,92,0.16)',

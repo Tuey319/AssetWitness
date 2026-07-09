@@ -80,7 +80,7 @@ export default function AnalyzingScreen() {
               <Text style={{ fontSize: 11, fontWeight: '700', color: C.ink3, letterSpacing: 1, marginBottom: 8 }}>TROUBLESHOOTING</Text>
               <Text style={{ fontSize: 12, color: C.ink2, lineHeight: 20 }}>
                 1. Make sure Express is running:{'\n'}
-                <Text style={{ color: C.amber, fontFamily: 'IBMPlexMono_500Medium' }}>  cd express-backend && npm run dev{'\n'}</Text>
+                <Text style={{ color: C.amberDark, fontFamily: 'IBMPlexMono_500Medium' }}>  cd express-backend && npm run dev{'\n'}</Text>
                 2. Check your IP in roomwitness-app/.env{'\n'}
                 3. Or set EXPO_PUBLIC_USE_MOCK=true to demo
               </Text>
@@ -109,7 +109,7 @@ export default function AnalyzingScreen() {
           <Animated.View style={{ transform: [{ scale: pulse }] }}>
             <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: C.amberSoft, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
               <View style={{ width: 68, height: 68, borderRadius: 34, backgroundColor: C.surface2, borderWidth: 1.5, borderColor: C.amber + '40', alignItems: 'center', justifyContent: 'center' }}>
-                <RingSpinner color={C.amber} />
+                <RingSpinner color={C.amberDark} />
               </View>
             </View>
           </Animated.View>
@@ -145,7 +145,7 @@ export default function AnalyzingScreen() {
                   <Text style={{ fontSize: 11, color: C.ink3, marginTop: 1 }}>{s.sub}</Text>
                 </View>
                 {done   && <Text style={{ fontSize: 12, color: C.ok, fontWeight: '700' }}>Done</Text>}
-                {active && <Text style={{ fontSize: 12, color: C.amber, fontWeight: '700' }}>Running…</Text>}
+                {active && <Text style={{ fontSize: 12, color: C.amberDark, fontWeight: '700' }}>Running…</Text>}
               </View>
             );
           })}

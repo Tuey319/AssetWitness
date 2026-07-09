@@ -1,19 +1,12 @@
 import { router } from 'expo-router';
+import { ChevronLeft } from 'lucide-react-native';
 import { useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
+  Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { NavHeader } from '@/components/NavHeader';
-import { PrimaryButton } from '@/components/PrimaryButton';
 import { useStore } from '@/lib/store';
+import { getColors } from '@/lib/theme';
 import type { DocsDetails } from '@/lib/types';
 
 const ROUTES: { key: DocsDetails['routing']; label: string; sub: string }[] = [
@@ -22,53 +15,48 @@ const ROUTES: { key: DocsDetails['routing']; label: string; sub: string }[] = [
   { key: 'BOTH', label: 'ทั้งคู่', sub: 'Both channels' },
 ];
 
-function Field({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  keyboardType = 'default',
-  multiline = false,
-  required = false,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  placeholder?: string;
-  keyboardType?: 'default' | 'numeric';
-  multiline?: boolean;
-  required?: boolean;
+function Field({ label, value, onChange, placeholder, numeric = false, multiline = false, required = false }: {
+  label: string; value: string; onChange: (t: string) => void;
+  placeholder?: string; numeric?: boolean; multiline?: boolean; required?: boolean;
 }) {
+  const C = getColors(useStore(s => s.theme));
+  const [focus, setFocus] = useState(false);
   return (
-    <View className="mb-3">
-      <View className="flex-row items-center mb-1.5">
-        <Text className="text-label-secondary text-xs font-medium">{label}</Text>
-        {required && <Text className="text-unlawful text-xs ml-1">*</Text>}
+    <View style={{ marginBottom: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+        <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink3, letterSpacing: 1, textTransform: 'uppercase' }}>{label}</Text>
+        {required && <Text style={{ fontSize: 11, color: C.danger, marginLeft: 3 }}>*</Text>}
       </View>
       <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-        multiline={multiline}
+        value={value} onChangeText={onChange} placeholder={placeholder}
+        keyboardType={numeric ? 'numeric' : 'default'} multiline={multiline}
         numberOfLines={multiline ? 2 : 1}
-        className="bg-bg rounded-lg px-3 py-3 text-navy text-sm"
-        placeholderTextColor="#C7C7CC"
-        textAlignVertical={multiline ? 'top' : 'center'}
+        onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
+        placeholderTextColor={C.ink3}
+        style={{
+          backgroundColor: focus ? C.surface2 : C.surface,
+          borderWidth: 1, borderColor: focus ? C.amber : C.border,
+          borderRadius: 13, paddingHorizontal: 14, paddingVertical: 12,
+          fontSize: 14, color: C.ink, minHeight: multiline ? 60 : undefined,
+          textAlignVertical: multiline ? 'top' : 'center',
+        }}
       />
     </View>
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
+function SectionCard({ title, children, C }: { title: string; children: React.ReactNode; C: ReturnType<typeof getColors> }) {
   return (
-    <Text className="text-label text-sm font-semibold uppercase tracking-wide mb-2 mt-4">
-      {title}
-    </Text>
+    <View style={{ backgroundColor: C.surface, borderRadius: 20, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: C.border }}>
+      <Text style={{ fontSize: 11, fontWeight: '700', color: C.ink3, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 14 }}>{title}</Text>
+      {children}
+    </View>
   );
 }
 
 export default function DetailsScreen() {
+  const theme = useStore(s => s.theme);
+  const C = getColors(theme);
   const setDocsDetails = useStore((s) => s.setDocsDetails);
   const [routing, setRouting] = useState<DocsDetails['routing']>('OCPB');
   const [nameTh, setNameTh]               = useState('');
@@ -100,79 +88,66 @@ export default function DetailsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <NavHeader title="ข้อมูลเอกสาร" subtitle="Details for your legal documents" />
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View className="pt-5 pb-2">
-            <Text className="text-3xl font-bold text-navy">ข้อมูลเอกสาร</Text>
-            <Text className="text-label-secondary text-base mt-1">Fill in your details for the legal documents</Text>
-          </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
+      <View style={{ backgroundColor: C.surface, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: C.border }}>
+        <Pressable onPress={() => router.back()} hitSlop={12}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: C.surface2, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: C.border, marginBottom: 16 }}>
+          <ChevronLeft size={14} color={C.ink2} strokeWidth={2.5} />
+          <Text style={{ fontSize: 12, color: C.ink2, fontWeight: '600' }}>Back</Text>
+        </Pressable>
+        <Text style={{ fontSize: 26, fontWeight: '900', color: C.ink, letterSpacing: -1 }}>ข้อมูลเอกสาร</Text>
+        <Text style={{ fontSize: 13, color: C.ink2, marginTop: 4 }}>Fill in your details for the legal documents</Text>
+      </View>
+
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
           {/* Route selector */}
-          <SectionHeader title="ยื่นเรื่องที่ไหน" />
-          <View className="flex-row gap-2 mb-2">
-            {ROUTES.map((r) => {
-              const active = routing === r.key;
-              return (
-                <Pressable
-                  key={r.key}
-                  onPress={() => setRouting(r.key)}
-                  className={`flex-1 rounded-xl py-3 px-2 items-center border ${
-                    active ? 'bg-primary border-primary' : 'bg-bg-secondary border-separator'
-                  }`}
-                >
-                  <Text className={`text-sm font-bold ${active ? 'text-white' : 'text-navy'}`}>
-                    {r.label}
-                  </Text>
-                  <Text className={`text-xs mt-0.5 text-center leading-3 ${active ? 'text-white/70' : 'text-label-secondary'}`}>
-                    {r.sub}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <SectionCard title="ยื่นเรื่องที่ไหน · File with" C={C}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {ROUTES.map((r) => {
+                const active = routing === r.key;
+                return (
+                  <Pressable key={r.key} onPress={() => setRouting(r.key)}
+                    style={{ flex: 1, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 8, alignItems: 'center', borderWidth: 1, backgroundColor: active ? C.amber : C.surface2, borderColor: active ? C.amber : C.border }}>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: active ? '#FFFFFF' : C.ink }}>{r.label}</Text>
+                    <Text style={{ fontSize: 10, marginTop: 2, textAlign: 'center', lineHeight: 13, color: active ? 'rgba(255,255,255,0.75)' : C.ink3 }}>{r.sub}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </SectionCard>
 
-          {/* Tenant */}
-          <View className="bg-bg-secondary rounded-xl p-4 mt-2">
-            <SectionHeader title="ผู้เช่า (คุณ)" />
-            <Field label="ชื่อ-นามสกุล (ไทย)" value={nameTh} onChangeText={setNameTh} placeholder="สมชาย ใจดี" required />
-            <Field label="Full name (English)" value={nameEn} onChangeText={setNameEn} placeholder="Somchai Jaidee" />
-            <Field label="เลขบัตรประชาชน" value={idNumber} onChangeText={setIdNumber} placeholder="1-2345-67890-12-3" keyboardType="numeric" />
-            <Field label="ที่อยู่ผู้เช่า" value={tenantAddress} onChangeText={setTenantAddress} multiline />
-            <Field label="เบอร์โทรศัพท์" value={phone} onChangeText={setPhone} keyboardType="numeric" />
-          </View>
+          <SectionCard title="ผู้เช่า (คุณ) · Tenant" C={C}>
+            <Field label="ชื่อ-นามสกุล (ไทย) *" value={nameTh} onChange={setNameTh} placeholder="สมชาย ใจดี" required />
+            <Field label="Full name (English)" value={nameEn} onChange={setNameEn} placeholder="Somchai Jaidee" />
+            <Field label="เลขบัตรประชาชน" value={idNumber} onChange={setIdNumber} placeholder="1-2345-67890-12-3" numeric />
+            <Field label="ที่อยู่ผู้เช่า" value={tenantAddress} onChange={setTenantAddress} multiline />
+            <Field label="เบอร์โทรศัพท์" value={phone} onChange={setPhone} numeric />
+          </SectionCard>
 
-          {/* Landlord */}
-          <View className="bg-bg-secondary rounded-xl p-4 mt-3">
-            <SectionHeader title="เจ้าของบ้าน" />
-            <Field label="ชื่อเจ้าของบ้าน" value={landlordName} onChangeText={setLandlordName} />
-            <Field label="ที่อยู่เจ้าของบ้าน" value={landlordAddress} onChangeText={setLandlordAddress} multiline />
-            <Field label="จำนวนยูนิตทั้งหมด" value={unitCount} onChangeText={setUnitCount} placeholder="0 = ไม่ทราบ" keyboardType="numeric" />
-          </View>
+          <SectionCard title="เจ้าของบ้าน · Landlord" C={C}>
+            <Field label="ชื่อเจ้าของบ้าน" value={landlordName} onChange={setLandlordName} />
+            <Field label="ที่อยู่เจ้าของบ้าน" value={landlordAddress} onChange={setLandlordAddress} multiline />
+            <Field label="จำนวนยูนิตทั้งหมด" value={unitCount} onChange={setUnitCount} placeholder="0 = ไม่ทราบ" numeric />
+          </SectionCard>
 
-          {/* Lease */}
-          <View className="bg-bg-secondary rounded-xl p-4 mt-3 mb-5">
-            <SectionHeader title="สัญญาเช่า" />
-            <Field label="ที่อยู่ห้องเช่า" value={propertyAddress} onChangeText={setPropertyAddress} multiline />
-            <Field label="วันเริ่มเช่า" value={startDate} onChangeText={setStartDate} placeholder="2024-01-01" />
-            <Field label="วันสิ้นสุดสัญญา" value={endDate} onChangeText={setEndDate} placeholder="2024-12-31" />
-            <Field label="เงินประกัน (฿)" value={deposit} onChangeText={setDeposit} placeholder="20000" keyboardType="numeric" />
-            <Field label="ค่าเช่าต่อเดือน (฿)" value={rent} onChangeText={setRent} placeholder="10000" keyboardType="numeric" />
-          </View>
-
-          <PrimaryButton
-            title="สร้างเอกสาร →"
-            onPress={handleSubmit}
-            disabled={!nameTh.trim()}
-          />
+          <SectionCard title="สัญญาเช่า · Lease" C={C}>
+            <Field label="ที่อยู่ห้องเช่า" value={propertyAddress} onChange={setPropertyAddress} multiline />
+            <Field label="วันเริ่มเช่า" value={startDate} onChange={setStartDate} placeholder="2024-01-01" />
+            <Field label="วันสิ้นสุดสัญญา" value={endDate} onChange={setEndDate} placeholder="2024-12-31" />
+            <Field label="เงินประกัน (฿)" value={deposit} onChange={setDeposit} placeholder="20000" numeric />
+            <Field label="ค่าเช่าต่อเดือน (฿)" value={rent} onChange={setRent} placeholder="10000" numeric />
+          </SectionCard>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <View style={{ paddingHorizontal: 20, paddingBottom: 20, paddingTop: 12, backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border }}>
+        <Pressable onPress={handleSubmit} disabled={!nameTh.trim()}
+          style={{ backgroundColor: C.amberDark, borderRadius: 16, paddingVertical: 17, alignItems: 'center', opacity: !nameTh.trim() ? 0.5 : 1 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', letterSpacing: -0.3 }}>สร้างเอกสาร →</Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }

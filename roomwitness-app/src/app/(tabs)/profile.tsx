@@ -200,8 +200,12 @@ export default function ProfileScreen() {
   const toggleTheme = useStore(s => s.toggleTheme);
   const profile     = useStore(s => s.profile);
   const setProfile  = useStore(s => s.setProfile);
+  const cases       = useStore(s => s.cases);
   const C           = getColors(theme);
   const isDark      = theme === 'dark';
+
+  const totalRecovered = cases.reduce((s, c) => s + c.totalRecoverable, 0);
+  const winRate = cases.length > 0 ? Math.round(cases.filter(c => c.verdict !== 'LAWFUL').length / cases.length * 100) : 0;
 
   const [editing, setEditing] = useState(false);
   const [nameTh, setNameTh]   = useState(profile.nameTh);
@@ -227,7 +231,7 @@ export default function ProfileScreen() {
 
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: editing ? 16 : 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.amberDark, alignItems: 'center', justifyContent: 'center' }}>
                 {profile.nameTh
                   ? <Text style={{ fontSize: 20, fontWeight: '900', color: '#FFFFFF' }}>{profile.nameTh.charAt(0)}</Text>
                   : <User size={22} color="#FFFFFF" strokeWidth={2.5} />}
@@ -266,9 +270,13 @@ export default function ProfileScreen() {
             </View>
           ) : (
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              {[{ v: '3', l: 'Cases' }, { v: '฿23k', l: 'Recovered' }, { v: '98%', l: 'Won' }].map((s, i) => (
+              {[
+                { v: String(cases.length), l: 'Cases' },
+                { v: totalRecovered >= 1000 ? `฿${Math.round(totalRecovered / 1000)}k` : `฿${totalRecovered}`, l: 'Recovered' },
+                { v: cases.length > 0 ? `${winRate}%` : '—', l: 'Won' },
+              ].map((s, i) => (
                 <View key={i} style={{ flex: 1, backgroundColor: C.surface2, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: C.border2 }}>
-                  <Text style={{ fontSize: 20, fontWeight: '900', color: C.amber }}>{s.v}</Text>
+                  <Text style={{ fontSize: 20, fontWeight: '900', color: C.amberDark }}>{s.v}</Text>
                   <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '600', marginTop: 2 }}>{s.l}</Text>
                 </View>
               ))}
@@ -348,7 +356,7 @@ export default function ProfileScreen() {
             ].map(s => (
               <View key={s.l} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: C.border }}>
                 <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 0.5, marginBottom: 3 }}>{s.l.toUpperCase()}</Text>
-                <Text style={{ fontSize: 15, fontWeight: '900', color: C.amber }}>{s.v}</Text>
+                <Text style={{ fontSize: 15, fontWeight: '900', color: C.amberDark }}>{s.v}</Text>
               </View>
             ))}
           </View>
@@ -369,7 +377,7 @@ export default function ProfileScreen() {
         <View style={{ alignItems: 'center', gap: 4 }}>
           <Text style={{ fontSize: 11, color: C.ink3 }}>BDI Bangkok Hackathon 2026 · Team: KP · Beam · Tuey</Text>
           <View style={{ marginTop: 6, backgroundColor: C.amberSoft, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: C.border }}>
-            <Text style={{ fontSize: 10, color: C.amber, fontWeight: '700' }}>Powered by Thai Law AI</Text>
+            <Text style={{ fontSize: 10, color: C.amberDark, fontWeight: '700' }}>Powered by Thai Law AI</Text>
           </View>
         </View>
       </ScrollView>

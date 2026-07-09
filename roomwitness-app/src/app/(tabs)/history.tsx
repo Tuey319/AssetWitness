@@ -6,11 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getColors } from '@/lib/theme';
 import { useStore } from '@/lib/store';
 
-const CASES = [
-  { id: 'RW-2026-001', date: '28 Jun 2026', items: ['Wall paint', 'Floor scratch'], total: 8000, unlawful: 5000, verdict: 'UNLAWFUL' as const },
-  { id: 'RW-2026-002', date: '15 Jun 2026', items: ['Sofa', 'Coffee table'],        total: 30000, unlawful: 18000, verdict: 'DISPUTED' as const },
-  { id: 'RW-2026-003', date: '2 Jun 2026',  items: ['Deep cleaning'],               total: 2000,  unlawful: 0, verdict: 'LAWFUL' as const },
-];
+function fullDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 const FILTERS = ['All', 'Unlawful', 'Disputed', 'Lawful'] as const;
 type Filter = typeof FILTERS[number];
@@ -32,6 +30,7 @@ export default function HistoryScreen() {
   const theme  = useStore(s => s.theme);
   const C      = getColors(theme);
   const isDark = theme === 'dark';
+  const CASES  = useStore(s => s.cases);
 
   const [q, setQ]           = useState('');
   const [filter, setFilter] = useState<Filter>('All');
@@ -44,7 +43,8 @@ export default function HistoryScreen() {
     return matchesFilter && matchesQuery;
   });
 
-  const totalRecovered = CASES.reduce((s, c) => s + c.unlawful, 0);
+  const totalRecovered = CASES.reduce((s, c) => s + c.totalRecoverable, 0);
+  const winRate = CASES.length > 0 ? Math.round(CASES.filter(c => c.verdict !== 'LAWFUL').length / CASES.length * 100) : 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
@@ -102,11 +102,11 @@ export default function HistoryScreen() {
           {[
             { l: 'Total cases', v: String(CASES.length) },
             { l: 'Total recovered', v: `฿${totalRecovered.toLocaleString()}` },
-            { l: 'Win rate', v: '98%' },
+            { l: 'Win rate', v: `${winRate}%` },
           ].map((s, i) => (
             <View key={i} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: C.border }}>
               <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4 }}>{s.l}</Text>
-              <Text style={{ fontSize: 18, fontWeight: '900', color: C.amber, letterSpacing: -0.5 }}>{s.v}</Text>
+              <Text style={{ fontSize: 18, fontWeight: '900', color: C.amberDark, letterSpacing: -0.5 }}>{s.v}</Text>
             </View>
           ))}
         </View>
@@ -132,14 +132,14 @@ export default function HistoryScreen() {
           filtered.map(c => {
             const v = vcfg[c.verdict];
             return (
-              <Pressable key={c.id} style={{ backgroundColor: C.surface, borderRadius: 20, padding: 18, marginBottom: 12, borderWidth: 1, borderColor: C.border }}>
+              <Pressable key={c.id} onPress={() => router.push('/results')} style={{ backgroundColor: C.surface, borderRadius: 20, padding: 18, marginBottom: 12, borderWidth: 1, borderColor: C.border }}>
                 {/* Top */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <View>
                     <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>{c.id}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
                       <Clock size={11} color={C.ink3} strokeWidth={2} />
-                      <Text style={{ fontSize: 12, color: C.ink3 }}>{c.date}</Text>
+                      <Text style={{ fontSize: 12, color: C.ink3 }}>{fullDate(c.createdAt)}</Text>
                     </View>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: v.bg, borderRadius: 999, borderWidth: 1, borderColor: v.border }}>
@@ -160,11 +160,11 @@ export default function HistoryScreen() {
                 {/* Amounts */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border2 }}>
                   <Text style={{ fontSize: 13, color: C.ink2 }}>
-                    Charged: <Text style={{ fontWeight: '800', color: C.ink }}>฿{c.total.toLocaleString()}</Text>
+                    Charged: <Text style={{ fontWeight: '800', color: C.ink }}>฿{c.totalCharged.toLocaleString()}</Text>
                   </Text>
-                  {c.unlawful > 0 && (
+                  {c.totalRecoverable > 0 && (
                     <View style={{ backgroundColor: isDark ? 'rgba(52,211,153,0.10)' : '#ECFDF5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '800', color: C.ok }}>+฿{c.unlawful.toLocaleString()}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '800', color: C.ok }}>+฿{c.totalRecoverable.toLocaleString()}</Text>
                     </View>
                   )}
                 </View>

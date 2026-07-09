@@ -13,7 +13,7 @@ const IDLE_STEPS: StepState[] = ['idle', 'idle', 'idle', 'idle'];
 
 // Mirrors roomwitness-app/src/app/new-case.tsx's 4-step wizard, accent-for-accent.
 const WIZ_STEPS = [
-  { headline: 'What is the\nlandlord charging?', sub: 'Add each deduction item',       accent: 'var(--amber)' },
+  { headline: 'What is the\nlandlord charging?', sub: 'Add each deduction item',       accent: 'var(--amber-dark)' },
   { headline: 'Add your\nphotos',                 sub: 'Move-in vs move-out',           accent: 'var(--blue)' },
   { headline: 'Extra\nevidence',                  sub: 'Contract, messages — optional', accent: 'var(--green)' },
   { headline: "You're\nready.",                   sub: 'Review before AI analysis',     accent: 'var(--purple)' },
@@ -309,7 +309,7 @@ export default function AppPage() {
         <header><div className="header-inner"><div><h1>RoomWitness</h1></div></div></header>
         <div className="paywall-wrap">
           <button className="wiz-back" onClick={() => setShowPaywall(false)} style={{ marginBottom: 20 }}>← Back</button>
-          <div className="paywall-lock"><LockIcon size={26} color="var(--amber)" /></div>
+          <div className="paywall-lock"><LockIcon size={26} color="var(--amber-dark)" /></div>
           <div className="paywall-title">You're filing a real claim</div>
           <p className="paywall-sub">
             Downloading, saving move-in photos, and entering claims are always free.<br />
@@ -513,7 +513,7 @@ export default function AppPage() {
                   { n: '01', l: 'CV · Photo comparison',  c: 'var(--blue)' },
                   { n: '02', l: 'Contract · Clause parser', c: 'var(--purple)' },
                   { n: '03', l: 'Legal · ป.พ.พ. RAG',      c: 'var(--green)' },
-                  { n: '04', l: 'Docs · Thai PDF export',  c: 'var(--amber)' },
+                  { n: '04', l: 'Docs · Thai PDF export',  c: 'var(--amber-dark)' },
                 ].map(a => (
                   <div key={a.n} className="review-agent-row">
                     <div className="review-agent-num" style={{ background: a.c }}>{a.n}</div>

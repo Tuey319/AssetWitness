@@ -185,7 +185,7 @@ export default function NewCaseScreen() {
             <Text style={{ fontSize: 12, color: C.ink2, fontWeight: '600' }}>{step > 0 ? 'Back' : 'Home'}</Text>
           </Pressable>
           <View style={{ backgroundColor: C.amberSoft, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: C.border }}>
-            <Text style={{ fontSize: 11, color: C.amber, fontWeight: '700' }}>Step {step + 1} of 4</Text>
+            <Text style={{ fontSize: 11, color: C.amberDark, fontWeight: '700' }}>Step {step + 1} of 4</Text>
           </View>
         </View>
 
@@ -223,7 +223,7 @@ export default function NewCaseScreen() {
                   <View key={c.id} style={{ backgroundColor: C.surface, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.border }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.amber, alignItems: 'center', justifyContent: 'center' }}>
+                        <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.amberDark, alignItems: 'center', justifyContent: 'center' }}>
                           <Text style={{ fontSize: 11, fontWeight: '900', color: '#FFFFFF' }}>{idx + 1}</Text>
                         </View>
                         <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink2 }}>Claim {idx + 1}</Text>
@@ -250,7 +250,7 @@ export default function NewCaseScreen() {
                 {totalCharged > 0 && (
                   <View style={{ backgroundColor: C.amberSoft, borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: C.border }}>
                     <Text style={{ fontSize: 13, color: C.ink2, fontWeight: '600' }}>Total being disputed</Text>
-                    <Text style={{ fontSize: 28, fontWeight: '900', color: C.amber, letterSpacing: -1 }}>฿{totalCharged.toLocaleString()}</Text>
+                    <Text style={{ fontSize: 28, fontWeight: '900', color: C.amberDark, letterSpacing: -1 }}>฿{totalCharged.toLocaleString()}</Text>
                   </View>
                 )}
               </View>
@@ -361,7 +361,7 @@ export default function NewCaseScreen() {
                 <View style={{ backgroundColor: C.surface, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: C.border, overflow: 'hidden', position: 'relative' }}>
                   <View style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(245,158,11,0.06)' }} />
                   <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 2, marginBottom: 6 }}>TOTAL DISPUTED</Text>
-                  <Text style={{ fontSize: 48, fontWeight: '900', color: C.amber, letterSpacing: -2, lineHeight: 52, marginBottom: 20 }}>
+                  <Text style={{ fontSize: 48, fontWeight: '900', color: C.amberDark, letterSpacing: -2, lineHeight: 52, marginBottom: 20 }}>
                     ฿{totalCharged.toLocaleString()}
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -385,7 +385,7 @@ export default function NewCaseScreen() {
                       <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink }}>{c.item}</Text>
                       {c.description ? <Text style={{ fontSize: 12, color: C.ink2, marginTop: 2 }} numberOfLines={1}>{c.description}</Text> : null}
                     </View>
-                    <Text style={{ fontSize: 17, fontWeight: '800', color: C.amber }}>฿{c.amount_thb.toLocaleString()}</Text>
+                    <Text style={{ fontSize: 17, fontWeight: '800', color: C.amberDark }}>฿{c.amount_thb.toLocaleString()}</Text>
                   </View>
                 ))}
 
@@ -424,7 +424,7 @@ export default function NewCaseScreen() {
           </Pressable>
         ) : (
           <Pressable onPress={submit}
-            style={{ backgroundColor: C.amber, borderRadius: 16, paddingVertical: 17, alignItems: 'center' }}>
+            style={{ backgroundColor: C.amberDark, borderRadius: 16, paddingVertical: 17, alignItems: 'center' }}>
             <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', letterSpacing: -0.3 }}>Continue to unlock AI analysis →</Text>
           </Pressable>
         )}

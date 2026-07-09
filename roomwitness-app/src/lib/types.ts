@@ -16,6 +16,16 @@ export interface MoveInRecord {
   photoUris: string[];
 }
 
+/** A saved history entry for a completed (paid) analysis — powers Home/History/Profile. */
+export interface CaseRecord {
+  id: string;
+  createdAt: string;
+  items: string[];
+  totalCharged: number;
+  totalRecoverable: number;
+  verdict: 'LAWFUL' | 'DISPUTED' | 'UNLAWFUL';
+}
+
 export interface CV {
   move_in_condition: string;
   move_out_condition: string;

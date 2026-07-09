@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { AnalyzeForm, DocsDetails, FullAnalysis, GenerateDocsResult, MoveInRecord } from './types';
+import type { AnalyzeForm, CaseRecord, DocsDetails, FullAnalysis, GenerateDocsResult, MoveInRecord } from './types';
 import type { Theme } from './theme';
 
 interface UserProfile {
@@ -33,6 +33,10 @@ interface Store {
   unlockedClaim: boolean;
   setUnlockedClaim: (v: boolean) => void;
 
+  // Case history — one record per completed (paid) analysis. Powers Home/History/Profile.
+  cases: CaseRecord[];
+  addCase: (c: CaseRecord) => void;
+
   // Theme
   theme: Theme;
   setTheme: (t: Theme) => void;
@@ -62,6 +66,9 @@ export const useStore = create<Store>()(
       unlockedClaim: false,
       setUnlockedClaim: (unlockedClaim) => set({ unlockedClaim }),
 
+      cases: [],
+      addCase: (c) => set((s) => ({ cases: [c, ...s.cases] })),
+
       theme: 'light',
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
@@ -74,7 +81,7 @@ export const useStore = create<Store>()(
       storage: createJSONStorage(() => AsyncStorage),
       // Only persist data that should outlive the app session (the whole point
       // of the move-in vault) — not in-flight analysis state or the paywall flag.
-      partialize: (s) => ({ moveInRecords: s.moveInRecords, profile: s.profile, theme: s.theme }),
+      partialize: (s) => ({ moveInRecords: s.moveInRecords, profile: s.profile, theme: s.theme, cases: s.cases }),
     }
   )
 );

@@ -47,7 +47,7 @@ export default function PaywallScreen() {
       <View style={{ flex: 1, paddingHorizontal: 20, justifyContent: 'center' }}>
         <View style={{ alignItems: 'center', marginBottom: 24 }}>
           <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: C.border }}>
-            <Lock size={26} color={C.amber} strokeWidth={2} />
+            <Lock size={26} color={C.amberDark} strokeWidth={2} />
           </View>
           <Text style={{ fontSize: 26, fontWeight: '900', color: C.ink, letterSpacing: -1, textAlign: 'center' }}>
             You're filing a real claim
@@ -64,8 +64,8 @@ export default function PaywallScreen() {
               {claimCount} claim{claimCount !== 1 ? 's' : ''} · ฿{totalCharged.toLocaleString()} disputed
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <Sparkles size={12} color={C.amber} strokeWidth={2} />
-              <Text style={{ fontSize: 11, color: C.amber, fontWeight: '700' }}>ONE-TIME</Text>
+              <Sparkles size={12} color={C.amberDark} strokeWidth={2} />
+              <Text style={{ fontSize: 11, color: C.amberDark, fontWeight: '700' }}>ONE-TIME</Text>
             </View>
           </View>
           <Text style={{ fontSize: 40, fontWeight: '900', color: C.ink, letterSpacing: -2, marginBottom: 16 }}>฿{TOTAL_PRICE}</Text>
@@ -92,7 +92,7 @@ export default function PaywallScreen() {
         </View>
 
         <Pressable onPress={pay} disabled={paying}
-          style={{ backgroundColor: C.amber, borderRadius: 16, paddingVertical: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: paying ? 0.7 : 1 }}>
+          style={{ backgroundColor: C.amberDark, borderRadius: 16, paddingVertical: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, opacity: paying ? 0.7 : 1 }}>
           <CheckCircle2 size={18} color="#FFFFFF" strokeWidth={2.5} />
           <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', letterSpacing: -0.3 }}>
             {paying ? 'Processing…' : 'Pay ฿99 & analyze'}

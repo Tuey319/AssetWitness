@@ -8,12 +8,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getColors } from '@/lib/theme';
 import { useStore } from '@/lib/store';
 
-// ─── Mock data — replace with real store data once cases persist ────
-const RECENT_CASES = [
-  { id: 'RW-2026-001', item: 'Wall paint + Floor scratch', date: '28 Jun', total: 8000, unlawful: 5000, verdict: 'UNLAWFUL' as const },
-  { id: 'RW-2026-002', item: 'Sofa + Coffee table',        date: '15 Jun', total: 30000, unlawful: 18000, verdict: 'DISPUTED' as const },
-  { id: 'RW-2026-003', item: 'Deep cleaning',               date: '2 Jun',  total: 2000,  unlawful: 0, verdict: 'LAWFUL' as const },
-];
+function shortDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
 
 const VCFG = {
   UNLAWFUL: { label: 'Unlawful', text: '#F87171', bg: 'rgba(248,113,113,0.12)' },
@@ -41,9 +38,10 @@ export default function HomeScreen() {
   const theme         = useStore(s => s.theme);
   const profile       = useStore(s => s.profile);
   const moveInRecords = useStore(s => s.moveInRecords);
+  const cases         = useStore(s => s.cases);
   const C       = getColors(theme);
   const firstName = profile.nameTh ? profile.nameTh.split(' ')[0] : 'there';
-  const activeCase = RECENT_CASES[0]; // most recent / in-progress case
+  const activeCase = cases[0]; // most recent case
   const hasMoveIn = moveInRecords.length > 0;
 
   return (
@@ -113,8 +111,8 @@ export default function HomeScreen() {
             <View style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: 45, backgroundColor: C.amberGlow }} />
             <View style={{ flex: 1, paddingRight: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-                <Sparkles size={12} color={C.amber} strokeWidth={2} />
-                <Text style={{ fontSize: 10, color: C.amber, fontWeight: '700', letterSpacing: 0.5 }}>FREE · TAKES 2 MINUTES</Text>
+                <Sparkles size={12} color={C.amberDark} strokeWidth={2} />
+                <Text style={{ fontSize: 10, color: C.amberDark, fontWeight: '700', letterSpacing: 0.5 }}>FREE · TAKES 2 MINUTES</Text>
               </View>
               <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink, lineHeight: 20 }}>
                 Just moved in? Document it now, free — for whenever you need it
@@ -141,7 +139,7 @@ export default function HomeScreen() {
             return (
               <Pressable key={i} onPress={a.onPress} style={{ flex: 1, backgroundColor: C.surface, borderRadius: 16, paddingVertical: 16, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: C.border }}>
                 <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon size={17} color={C.amber} strokeWidth={2} />
+                  <Icon size={17} color={C.amberDark} strokeWidth={2} />
                 </View>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: C.ink2 }}>{a.label}</Text>
               </Pressable>
@@ -150,45 +148,47 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Active case ──────────────────────────────────── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>Active Case</Text>
-            <Pressable onPress={() => router.push('/(tabs)/history')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text style={{ fontSize: 12, color: C.amber, fontWeight: '700' }}>See All</Text>
-              <ChevronRight size={13} color={C.amber} strokeWidth={2.5} />
+        {activeCase && (
+          <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>Active Case</Text>
+              <Pressable onPress={() => router.push('/(tabs)/history')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <Text style={{ fontSize: 12, color: C.amberDark, fontWeight: '700' }}>See All</Text>
+                <ChevronRight size={13} color={C.amberDark} strokeWidth={2.5} />
+              </Pressable>
+            </View>
+
+            <Pressable onPress={() => router.push('/results')} style={{ backgroundColor: C.amber, borderRadius: 20, padding: 18, position: 'relative', overflow: 'hidden' }}>
+              <View style={{ position: 'absolute', bottom: -30, right: -20, width: 110, height: 110, borderRadius: 55, backgroundColor: 'rgba(0,0,0,0.06)' }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 16, fontWeight: '900', color: '#0C0A07' }}>{activeCase.items[0]?.charAt(0) ?? 'W'}</Text>
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 15, fontWeight: '800', color: '#0C0A07' }}>{activeCase.id}</Text>
+                    <Text style={{ fontSize: 11, color: 'rgba(12,10,7,0.6)', fontWeight: '600' }} numberOfLines={1}>{activeCase.items.join(' + ') || 'Claim'}</Text>
+                  </View>
+                </View>
+                <View style={{ backgroundColor: 'rgba(0,0,0,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#0C0A07' }}>{VCFG[activeCase.verdict].label}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }}>
+                <Clock size={13} color="#0C0A07" strokeWidth={2.5} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#0C0A07' }}>Filed {shortDate(activeCase.createdAt)} · ฿{activeCase.totalRecoverable.toLocaleString()} recoverable</Text>
+              </View>
             </Pressable>
           </View>
-
-          <Pressable style={{ backgroundColor: C.amber, borderRadius: 20, padding: 18, position: 'relative', overflow: 'hidden' }}>
-            <View style={{ position: 'absolute', bottom: -30, right: -20, width: 110, height: 110, borderRadius: 55, backgroundColor: 'rgba(0,0,0,0.06)' }} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.12)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 16, fontWeight: '900', color: '#0C0A07' }}>W</Text>
-                </View>
-                <View>
-                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#0C0A07' }}>{activeCase.id}</Text>
-                  <Text style={{ fontSize: 11, color: 'rgba(12,10,7,0.6)', fontWeight: '600' }}>{activeCase.item}</Text>
-                </View>
-              </View>
-              <View style={{ backgroundColor: 'rgba(0,0,0,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 }}>
-                <Text style={{ fontSize: 10, fontWeight: '800', color: '#0C0A07' }}>{VCFG[activeCase.verdict].label}</Text>
-              </View>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }}>
-              <Clock size={13} color="#0C0A07" strokeWidth={2.5} />
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#0C0A07' }}>Filed {activeCase.date} · ฿{activeCase.unlawful.toLocaleString()} recoverable</Text>
-            </View>
-          </Pressable>
-        </View>
+        )}
 
         {/* ── Claim categories ─────────────────────────────── */}
         <View style={{ marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 12 }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>Claim Categories</Text>
             <Pressable onPress={() => router.push('/new-case')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text style={{ fontSize: 12, color: C.amber, fontWeight: '700' }}>See All</Text>
-              <ChevronRight size={13} color={C.amber} strokeWidth={2.5} />
+              <Text style={{ fontSize: 12, color: C.amberDark, fontWeight: '700' }}>See All</Text>
+              <ChevronRight size={13} color={C.amberDark} strokeWidth={2.5} />
             </Pressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
@@ -197,7 +197,7 @@ export default function HomeScreen() {
               return (
                 <Pressable key={c.key} onPress={() => router.push('/new-case')} style={{ alignItems: 'center', gap: 7, width: 64 }}>
                   <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border }}>
-                    <Icon size={22} color={C.amber} strokeWidth={1.75} />
+                    <Icon size={22} color={C.amberDark} strokeWidth={1.75} />
                   </View>
                   <Text style={{ fontSize: 11, fontWeight: '600', color: C.ink2, textAlign: 'center' }}>{c.label}</Text>
                 </Pressable>
@@ -210,27 +210,35 @@ export default function HomeScreen() {
         <View style={{ paddingHorizontal: 20 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: C.ink }}>Recent Cases</Text>
-            <Pressable onPress={() => router.push('/(tabs)/history')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text style={{ fontSize: 12, color: C.amber, fontWeight: '700' }}>See All</Text>
-              <ChevronRight size={13} color={C.amber} strokeWidth={2.5} />
-            </Pressable>
+            {cases.length > 0 && (
+              <Pressable onPress={() => router.push('/(tabs)/history')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <Text style={{ fontSize: 12, color: C.amberDark, fontWeight: '700' }}>See All</Text>
+                <ChevronRight size={13} color={C.amberDark} strokeWidth={2.5} />
+              </Pressable>
+            )}
           </View>
 
-          {RECENT_CASES.map(c => {
+          {cases.length === 0 ? (
+            <Pressable onPress={() => router.push('/new-case')}
+              style={{ alignItems: 'center', gap: 6, backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: C.border, borderStyle: 'dashed', paddingVertical: 28, paddingHorizontal: 20 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink2 }}>No cases yet</Text>
+              <Text style={{ fontSize: 12, color: C.ink3, textAlign: 'center' }}>Cases appear here once you file and analyze a claim.</Text>
+            </Pressable>
+          ) : cases.slice(0, 5).map(c => {
             const v = VCFG[c.verdict];
             return (
-              <Pressable key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surface, borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: C.border }}>
+              <Pressable key={c.id} onPress={() => router.push('/(tabs)/history')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surface, borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: C.border }}>
                 <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.amberSoft, alignItems: 'center', justifyContent: 'center' }}>
-                  <Camera size={18} color={C.amber} strokeWidth={1.75} />
+                  <Camera size={18} color={C.amberDark} strokeWidth={1.75} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }} numberOfLines={1}>{c.item}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }} numberOfLines={1}>{c.items.join(' + ') || 'Claim'}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                    <Text style={{ fontSize: 11, color: C.ink3 }}>{c.id} · {c.date}</Text>
+                    <Text style={{ fontSize: 11, color: C.ink3 }}>{c.id} · {shortDate(c.createdAt)}</Text>
                   </View>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: C.ink }}>฿{c.total.toLocaleString()}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: C.ink }}>฿{c.totalCharged.toLocaleString()}</Text>
                   <View style={{ backgroundColor: v.bg, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
                     <Text style={{ fontSize: 9, fontWeight: '700', color: v.text }}>{v.label}</Text>
                   </View>
