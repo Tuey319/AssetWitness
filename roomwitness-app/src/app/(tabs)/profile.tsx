@@ -113,7 +113,7 @@ function PulseDot({ color }: { color: string }) {
   }, []);
   return (
     <View style={{ width: 10, height: 10, alignItems: 'center', justifyContent: 'center' }}>
-      <Animated.View style={{ position: 'absolute', width: 10, height: 10, borderRadius: 5, backgroundColor: color, opacity, transform: [{ scale }] }} />
+      <Animated.View style={{ position: 'absolute', width: 10, height: 10, borderRadius: 5, backgroundColor: color, opacity, transform: [{ scale }], pointerEvents: 'none' }} />
       <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />
     </View>
   );
@@ -227,7 +227,7 @@ export default function ProfileScreen() {
 
         {/* ── Profile card ──────────────────────────── */}
         <View style={{ backgroundColor: C.surface, marginHorizontal: 20, marginTop: 24, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: C.border, marginBottom: 24, overflow: 'hidden', position: 'relative' }}>
-          <View style={{ position: 'absolute', top: -30, right: -30, width: 130, height: 130, borderRadius: 65, backgroundColor: C.amberGlow }} />
+          <View style={{ position: 'absolute', top: -30, right: -30, width: 130, height: 130, borderRadius: 65, backgroundColor: C.amberGlow, pointerEvents: 'none' }} />
 
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: editing ? 16 : 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>

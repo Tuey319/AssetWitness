@@ -70,7 +70,7 @@ export default function HomeScreen() {
             <Pressable
               style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border }}>
               <Bell size={16} color={C.ink2} strokeWidth={2} />
-              <View style={{ position: 'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.amber, borderWidth: 1.5, borderColor: C.surface }} />
+              <View style={{ position: 'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.amber, borderWidth: 1.5, borderColor: C.surface, pointerEvents: 'none' }} />
             </Pressable>
           </View>
         </View>
@@ -87,7 +87,7 @@ export default function HomeScreen() {
         {/* ── Banner: free move-in vault vs paid claim ─────── */}
         {hasMoveIn ? (
           <View style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: C.surface, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', position: 'relative' }}>
-            <View style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: 45, backgroundColor: C.amberGlow }} />
+            <View style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: 45, backgroundColor: C.amberGlow, pointerEvents: 'none' }} />
             <View style={{ flex: 1, paddingRight: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 }}>
                 <ShieldCheck size={12} color={C.ok} strokeWidth={2} />
@@ -108,7 +108,7 @@ export default function HomeScreen() {
           </View>
         ) : (
           <View style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: C.surface, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', position: 'relative' }}>
-            <View style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: 45, backgroundColor: C.amberGlow }} />
+            <View style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: 45, backgroundColor: C.amberGlow, pointerEvents: 'none' }} />
             <View style={{ flex: 1, paddingRight: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 }}>
                 <Sparkles size={12} color={C.amberDark} strokeWidth={2} />
@@ -159,7 +159,7 @@ export default function HomeScreen() {
             </View>
 
             <Pressable onPress={() => router.push('/results')} style={{ backgroundColor: C.amber, borderRadius: 20, padding: 18, position: 'relative', overflow: 'hidden' }}>
-              <View style={{ position: 'absolute', bottom: -30, right: -20, width: 110, height: 110, borderRadius: 55, backgroundColor: 'rgba(0,0,0,0.06)' }} />
+              <View style={{ position: 'absolute', bottom: -30, right: -20, width: 110, height: 110, borderRadius: 55, backgroundColor: 'rgba(0,0,0,0.06)', pointerEvents: 'none' }} />
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.12)', alignItems: 'center', justifyContent: 'center' }}>

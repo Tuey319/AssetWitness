@@ -68,8 +68,8 @@ export default function AnalyzingScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
         {/* Decorative orbs */}
-        <View style={{ position: 'absolute', top: 80, left: -60, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(248,113,113,0.04)' }} />
-        <View style={{ position: 'absolute', bottom: 100, right: -40, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(245,158,11,0.04)' }} />
+        <View style={{ position: 'absolute', top: 80, left: -60, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(248,113,113,0.04)', pointerEvents: 'none' }} />
+        <View style={{ position: 'absolute', bottom: 100, right: -40, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(245,158,11,0.04)', pointerEvents: 'none' }} />
 
         <View style={{ backgroundColor: 'rgba(248,113,113,0.08)', borderRadius: 24, padding: 28, width: '100%', borderWidth: 1, borderColor: 'rgba(248,113,113,0.2)', marginBottom: 24, alignItems: 'center' }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: C.danger, marginBottom: 10, letterSpacing: -0.4 }}>Analysis failed</Text>
@@ -101,8 +101,8 @@ export default function AnalyzingScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
         {/* Ambient glow orbs */}
-        <View style={{ position: 'absolute', top: 60, left: -80, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(245,158,11,0.04)' }} />
-        <View style={{ position: 'absolute', bottom: 80, right: -60, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(96,165,250,0.04)' }} />
+        <View style={{ position: 'absolute', top: 60, left: -80, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(245,158,11,0.04)', pointerEvents: 'none' }} />
+        <View style={{ position: 'absolute', bottom: 80, right: -60, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(96,165,250,0.04)', pointerEvents: 'none' }} />
 
         {/* Central orb */}
         <View style={{ alignItems: 'center', marginBottom: 48 }}>

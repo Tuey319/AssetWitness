@@ -260,9 +260,9 @@ export default function NewCaseScreen() {
             {step === 1 && (
               <View style={{ gap: 16 }}>
                 <View style={{ height: 100, position: 'relative', marginBottom: 4 }}>
-                  <View style={{ position: 'absolute', left: 0, top: 10, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(96,165,250,0.12)' }} />
-                  <View style={{ position: 'absolute', left: 60, top: 0, width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(245,158,11,0.08)' }} />
-                  <View style={{ position: 'absolute', right: 0, top: 15, width: 75, height: 75, borderRadius: 37, backgroundColor: 'rgba(52,211,153,0.08)' }} />
+                  <View style={{ position: 'absolute', left: 0, top: 10, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(96,165,250,0.12)', pointerEvents: 'none' }} />
+                  <View style={{ position: 'absolute', left: 60, top: 0, width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(245,158,11,0.08)', pointerEvents: 'none' }} />
+                  <View style={{ position: 'absolute', right: 0, top: 15, width: 75, height: 75, borderRadius: 37, backgroundColor: 'rgba(52,211,153,0.08)', pointerEvents: 'none' }} />
                   <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink2 }}>AI compares Before → After</Text>
                     <Text style={{ fontSize: 11, color: C.ink3, marginTop: 2 }}>More photos = stronger evidence</Text>
@@ -359,7 +359,7 @@ export default function NewCaseScreen() {
               <View style={{ gap: 12 }}>
                 {/* Big summary */}
                 <View style={{ backgroundColor: C.surface, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: C.border, overflow: 'hidden', position: 'relative' }}>
-                  <View style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(245,158,11,0.06)' }} />
+                  <View style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(245,158,11,0.06)', pointerEvents: 'none' }} />
                   <Text style={{ fontSize: 10, color: C.ink3, fontWeight: '700', letterSpacing: 2, marginBottom: 6 }}>TOTAL DISPUTED</Text>
                   <Text style={{ fontSize: 48, fontWeight: '900', color: C.amberDark, letterSpacing: -2, lineHeight: 52, marginBottom: 20 }}>
                     ฿{totalCharged.toLocaleString()}
