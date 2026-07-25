@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ps -p 97138 -o pid,stat,%cpu,%mem,command)",
+      "Bash(node -e \"console.log\\('next pkg:', require\\('next/package.json'\\).version\\)\")",
+      "Bash(node -e \"const t=Date.now\\(\\); require\\('./node_modules/next/dist/bin/next'\\); console.log\\('loaded bin in', Date.now\\(\\)-t,'ms'\\)\")",
+      "Bash(pkill -9 -f \"next dev\")",
+      "Bash(NEXT_TELEMETRY_DISABLED=1 node node_modules/next/dist/bin/next dev -p 3300)",
+      "Bash(echo \"web pid $!\")",
+      "Bash(until grep *)",
+      "Read(//private/tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3300)"
+    ]
+  }
+}
