@@ -19,9 +19,10 @@ except ImportError:
         def _wrap(fn): return fn
         return _wrap
 
-# TODO: Ensure GROQ_API_KEY is set in .env
-# TODO: Verify model availability — check https://console.groq.com for latest Scout model ID
-MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+# Groq retired the Llama-4-Scout vision preview; qwen/qwen3.6-27b is the current
+# vision-capable model on the API (confirmed against this account's /models list
+# and https://console.groq.com/docs/vision — supports up to 5 images/request).
+MODEL = "qwen/qwen3.6-27b"
 
 
 def _get_groq_client(api_key: str) -> Groq:
@@ -136,6 +137,11 @@ Rules:
             ],
             temperature=0.1,
             max_tokens=800,
+            # qwen/qwen3.6-27b is a thinking model by default — it burns max_tokens
+            # on a <think> block before ever emitting the JSON answer. This is a
+            # structured single-shot classification, not a task that benefits from
+            # visible chain-of-thought, so reasoning is turned off outright.
+            reasoning_effort="none",
         )
         raw = response.choices[0].message.content.strip()
         return json.loads(raw)
