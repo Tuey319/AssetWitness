@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// One row per completed handover — written by POST /dashboard/cases once
+// Agent 04 finishes. Deliberately just the aggregate numbers (not full agent
+// payloads) so the Portfolio Condition Dashboard stays a lightweight rollup,
+// not a duplicate store of what the pipeline already returned to the client.
+model HandoverCase {
+  id                              Int      @id @default(autoincrement())
+  building                        String
+  case_type                       String
+  needs_dispute_resolution        Boolean  @default(false)
+  total_estimated_cost_thb        Float
+  total_dad_responsibility_thb    Float
+  total_occupant_responsibility_thb Float
+  created_at                      DateTime @default(now())
+
+  @@map("handover_cases")
+}

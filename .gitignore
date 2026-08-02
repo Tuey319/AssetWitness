@@ -8,6 +8,7 @@ node_modules/
 out/
 dist/
 *.log
+generated/
 
 # Python
 __pycache__/

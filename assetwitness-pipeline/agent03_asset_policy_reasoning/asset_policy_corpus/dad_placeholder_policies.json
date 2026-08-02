@@ -1,0 +1,30 @@
+[
+  {
+    "chunk_id": "DAD_PLACEHOLDER_normal_wear",
+    "law_name_th": "[ยังไม่ยืนยัน] นโยบายการบำรุงรักษาและสภาพทรัพย์สินของ ธพส.",
+    "law_name_en": "[UNCONFIRMED] DAD's own maintenance & condition standards",
+    "clause": "Normal wear-and-tear threshold — placeholder",
+    "effective_date": null,
+    "status": "placeholder_pending_dad_policy",
+    "text_th": "ยังไม่มีเอกสารนโยบายสาธารณะของ ธพส. ที่ระบุเกณฑ์ความเสื่อมสภาพตามปกติโดยละเอียด ข้อความนี้เป็นตัวอย่างชั่วคราวเท่านั้น",
+    "text_en": "DAD has not published a granular normal-wear-and-tear standard. This is an illustrative placeholder only, not a real citation, pending an actual DAD occupancy/maintenance policy document.",
+    "applies_to": "both",
+    "topic_tags": "wear_and_tear,placeholder,unconfirmed,needs_dad_input",
+    "legal_implication": "Do not present this as an authoritative citation. It exists so the retrieval/reasoning architecture has something to query against before real DAD documents are available — see docs/asset-policy-methodology.md.",
+    "agent03_use": "PLACEHOLDER ONLY — if retrieved, the reasoning output must note that DAD-specific wear thresholds are pending validation, not assert them as settled"
+  },
+  {
+    "chunk_id": "DAD_PLACEHOLDER_fit_out_standard",
+    "law_name_th": "[ยังไม่ยืนยัน] มาตรฐานงานตกแต่งภายใน (fit-out) ของ ธพส.",
+    "law_name_en": "[UNCONFIRMED] DAD's own fit-out completion standard",
+    "clause": "Fit-out completion criteria — placeholder",
+    "effective_date": null,
+    "status": "placeholder_pending_dad_policy",
+    "text_th": "ยังไม่มีเอกสารมาตรฐานงานตกแต่งภายในที่เผยแพร่ต่อสาธารณะจาก ธพส. ข้อความนี้เป็นตัวอย่างชั่วคราวเท่านั้น",
+    "text_en": "DAD has not published a public fit-out completion standard. This is an illustrative placeholder only, pending an actual DAD fit-out policy document or contract template.",
+    "applies_to": "both",
+    "topic_tags": "fit_out,placeholder,unconfirmed,needs_dad_input",
+    "legal_implication": "The fit-out completion checklist document (Agent 04) should flag any item resolved using this placeholder as needing DAD sign-off, not present it as a settled standard.",
+    "agent03_use": "PLACEHOLDER ONLY — used for fit_out_inspection case_type when no more specific policy chunk is retrieved"
+  }
+]

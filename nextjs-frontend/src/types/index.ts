@@ -1,85 +1,84 @@
-export interface Claim {
-  claim_id: string;
+export interface ConditionItem {
+  item_id: string;
   item: string;
   description: string;
-  amount_thb: number;
+  estimated_cost_thb: number;
 }
 
-export interface CVResult {
-  claim_id: string;
+export interface ConditionAssessment {
+  item_id: string;
   item: string;
   verdict: 'UNCHANGED' | 'NORMAL_WEAR' | 'PRE_EXISTING' | 'NEW_DAMAGE' | null;
+  attributable_party: 'DAD' | 'OCCUPANT' | 'UNDETERMINED';
   confidence: number;
-  move_in_condition: string;
-  move_out_condition: string;
+  prior_condition: string;
+  current_condition: string;
   status: string;
-  supports_landlord_claim: string;
   wear_and_tear: boolean;
   wear_and_tear_reason: string;
   notes: string;
 }
 
-export interface ContractSummary {
-  deposit_amount_thb: number;
-  deposit_months: number;
-  lease_start: string;
-  lease_end: string;
+export interface AgreementSummary {
+  occupancy_start: string;
+  occupancy_end: string;
   notice_period_days: number;
-  monthly_rent_thb: number;
+  monthly_fee_thb: number;
+  deposit_amount_thb: number | null;
+  deposit_months: number | null;
 }
 
-export interface LiabilityItem {
-  claim_id: string;
+export interface ResponsibilityItem {
+  item_id: string;
   item: string;
-  amount_thb: number;
-  tenant_liable: boolean;
+  estimated_cost_thb: number;
+  occupant_responsible: boolean;
+  agreement_clause: string | null;
   clause_found: boolean;
-  contract_clause?: string;
+  pre_existing_disclosed: boolean;
   notes: string;
 }
 
-export interface UnfairClause {
+export interface NonCompliantClause {
   clause_text: string;
-  reason_void: string;
+  reason_non_compliant: string;
 }
 
-export interface ClaimVerdict {
-  claim_id: string;
+export type Responsibility = 'NORMAL_WEAR' | 'OCCUPANT_RESPONSIBILITY' | 'DAD_RESPONSIBILITY' | 'DISPUTED';
+
+export interface ItemVerdict {
+  item_id: string;
   item: string;
-  amount_thb: number;
-  verdict: 'LAWFUL' | 'DISPUTED' | 'UNLAWFUL';
+  estimated_cost_thb: number;
+  responsibility: Responsibility;
   reasoning_th: string;
   reasoning_en: string;
   citations: string[];
   recommended_action_th: string;
-  claim_validity_pct: number;
-  confidence: number;
+  responsibility_confidence_pct: number;
 }
 
 export interface Agent01Result {
-  damage_map: CVResult[];
+  condition_map: ConditionAssessment[];
   model_used: string;
 }
 
 export interface Agent02Result {
   pdf_filename: string | null;
-  liability_map: LiabilityItem[];
-  contract_summary: ContractSummary;
-  unfair_clauses: UnfairClause[];
+  responsibility_map: ResponsibilityItem[];
+  agreement_summary: AgreementSummary;
+  non_compliant_clauses: NonCompliantClause[];
   ocr_used: boolean;
   extraction_confidence: number;
-  landlord_promises: string[];
-  tenant_promises: string[];
-  deposit_mentions: string[];
-  platforms: string[];
 }
 
 export interface Agent03Result {
-  routing: string;
+  needs_dispute_resolution: boolean;
   documents_to_generate: string[];
-  total_claimed_thb: number;
-  total_unlawful_thb: number;
-  verdicts: ClaimVerdict[];
+  total_estimated_cost_thb: number;
+  total_dad_responsibility_thb: number;
+  total_occupant_responsibility_thb: number;
+  item_verdicts: ItemVerdict[];
   case_summary_th: string;
   case_summary_en: string;
 }
@@ -92,11 +91,15 @@ export interface DocumentInfo {
 }
 
 export interface Agent04Result {
-  case_id?: string;
+  handover_id?: string;
   documents: Record<string, DocumentInfo>;
   generation_time_seconds: number;
-  total_unlawful_amount_thb: number;
+  total_estimated_cost_thb: number;
+  total_dad_responsibility_thb: number;
+  total_occupant_responsibility_thb: number;
 }
+
+export type CaseType = 'move_in' | 'move_out' | 'fit_out_inspection';
 
 export type PipelineStep = 0 | 1 | 2 | 3 | 4;
 export type StepState = 'idle' | 'active' | 'done' | 'error';

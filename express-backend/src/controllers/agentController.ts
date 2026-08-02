@@ -10,47 +10,42 @@ import {
 import { postMultipart, postJSON, appendFile, cleanupFiles } from '../services/agentClient';
 
 export async function runAgent01(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const files    = req.files as Record<string, Express.Multer.File[]> | undefined;
-  const moveIns  = files?.move_in  ?? [];
-  const moveOuts = files?.move_out ?? [];
+  const files          = req.files as Record<string, Express.Multer.File[]> | undefined;
+  const priorPhotos     = files?.prior_condition   ?? [];
+  const currentPhotos   = files?.current_condition ?? [];
   try {
     const body = agent01BodySchema.parse(req.body);
     const fd = new FormData();
-    fd.append('claims', body.claims);
-    moveIns.forEach(f  => appendFile(fd, 'move_in',  f));
-    moveOuts.forEach(f => appendFile(fd, 'move_out', f));
+    fd.append('condition_items', body.condition_items);
+    priorPhotos.forEach(f   => appendFile(fd, 'prior_condition',   f));
+    currentPhotos.forEach(f => appendFile(fd, 'current_condition', f));
     const data = await postMultipart('agent01', '/api/v1/agent01', fd);
     res.json(data);
   } catch (err) {
     next(err);
   } finally {
-    cleanupFiles(...moveIns, ...moveOuts);
+    cleanupFiles(...priorPhotos, ...currentPhotos);
   }
 }
 
 export async function runAgent02(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const files        = req.files as Record<string, Express.Multer.File[]> | undefined;
-  const contractFile = files?.contract_file?.[0];
-  const screenshots  = files?.screenshots ?? [];
+  const files         = req.files as Record<string, Express.Multer.File[]> | undefined;
+  const agreementFile = files?.agreement_file?.[0];
   try {
     const body = agent02BodySchema.parse(req.body);
     const fd = new FormData();
-    fd.append('claims',                   body.claims);
-    fd.append('contract_clause',          body.contract_clause);
-    fd.append('lease_start',              body.lease_start);
-    fd.append('lease_end',                body.lease_end);
-    fd.append('deposit_amount',           body.deposit_amount);
-    fd.append('monthly_rent',             body.monthly_rent);
-    fd.append('manual_landlord_promises', body.manual_landlord_promises);
-    fd.append('manual_tenant_promises',   body.manual_tenant_promises);
-    appendFile(fd, 'contract_file', contractFile);
-    screenshots.forEach(f => appendFile(fd, 'screenshots', f));
+    fd.append('condition_items',  body.condition_items);
+    fd.append('agreement_clause', body.agreement_clause);
+    fd.append('occupancy_start',  body.occupancy_start);
+    fd.append('occupancy_end',    body.occupancy_end);
+    fd.append('monthly_fee',      body.monthly_fee);
+    appendFile(fd, 'agreement_file', agreementFile);
     const data = await postMultipart('agent02', '/api/v1/agent02', fd);
     res.json(data);
   } catch (err) {
     next(err);
   } finally {
-    cleanupFiles(contractFile, ...screenshots);
+    cleanupFiles(agreementFile);
   }
 }
 
@@ -78,15 +73,15 @@ export async function generateDocuments(req: Request, res: Response, next: NextF
   try {
     const body = generateDocumentsBodySchema.parse(req.body);
     const data = await postJSON('agent04', '/api/v1/agent04', body) as {
-      case_id?: string;
+      handover_id?: string;
       documents?: Record<string, { download_url?: string }>;
     };
     // Agent 04 returns agent-internal download paths — rewrite them to this
     // proxy's absolute URL so mobile clients can open them directly.
-    if (data?.case_id && data?.documents) {
+    if (data?.handover_id && data?.documents) {
       const base = `${req.protocol}://${req.get('host')}`;
       for (const [docType, doc] of Object.entries(data.documents)) {
-        doc.download_url = `${base}/download/${data.case_id}/${docType}`;
+        doc.download_url = `${base}/download/${data.handover_id}/${docType}`;
       }
     }
     res.json(data);

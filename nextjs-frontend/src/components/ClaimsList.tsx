@@ -1,36 +1,36 @@
 'use client';
 
-import { Claim } from '@/types';
+import { ConditionItem } from '@/types';
 
 interface Props {
-  claims: Claim[];
-  onChange: (claims: Claim[]) => void;
+  items: ConditionItem[];
+  onChange: (items: ConditionItem[]) => void;
 }
 
-export default function ClaimsList({ claims, onChange }: Props) {
+export default function ClaimsList({ items, onChange }: Props) {
   const add = () => {
-    const n = claims.length + 1;
-    onChange([...claims, {
-      claim_id: `C${String(n).padStart(3, '0')}`,
-      item: '', description: '', amount_thb: 0,
+    const n = items.length + 1;
+    onChange([...items, {
+      item_id: `I${String(n).padStart(3, '0')}`,
+      item: '', description: '', estimated_cost_thb: 0,
     }]);
   };
 
   const remove = (i: number) =>
     onChange(
-      claims
+      items
         .filter((_, idx) => idx !== i)
-        .map((c, idx) => ({ ...c, claim_id: `C${String(idx + 1).padStart(3, '0')}` }))
+        .map((c, idx) => ({ ...c, item_id: `I${String(idx + 1).padStart(3, '0')}` }))
     );
 
-  const update = (i: number, field: keyof Claim, value: string | number) =>
-    onChange(claims.map((c, idx) => idx === i ? { ...c, [field]: value } : c));
+  const update = (i: number, field: keyof ConditionItem, value: string | number) =>
+    onChange(items.map((c, idx) => idx === i ? { ...c, [field]: value } : c));
 
   return (
     <section className="card">
-      <h2>รายการหักเงินของเจ้าของบ้าน <span className="h2-en">Landlord claims</span></h2>
+      <h2>รายการทรัพย์สินที่ต้องตรวจสอบ <span className="h2-en">Condition items</span></h2>
       <div>
-        {claims.map((c, i) => (
+        {items.map((c, i) => (
           <div key={i} className="claim-row">
             <div className="claim-num">{i + 1}</div>
             <div className="claim-fields">
@@ -38,7 +38,7 @@ export default function ClaimsList({ claims, onChange }: Props) {
                 <label>รายการ <span className="lbl-en">Item</span></label>
                 <input
                   type="text"
-                  placeholder="e.g. bedroom wall"
+                  placeholder="e.g. conference room wall"
                   value={c.item}
                   onChange={e => update(i, 'item', e.target.value)}
                 />
@@ -47,19 +47,19 @@ export default function ClaimsList({ claims, onChange }: Props) {
                 <label>รายละเอียด <span className="lbl-en">Description</span></label>
                 <input
                   type="text"
-                  placeholder="Describe the damage"
+                  placeholder="Describe the condition change"
                   value={c.description}
                   onChange={e => update(i, 'description', e.target.value)}
                 />
               </div>
               <div className="field claim-amount-field">
-                <label>จำนวนเงิน (บาท) <span className="lbl-en">Amount</span></label>
+                <label>มูลค่าประเมิน (บาท) <span className="lbl-en">Estimated cost</span></label>
                 <input
                   type="number"
                   min="0"
                   placeholder="0"
-                  value={c.amount_thb || ''}
-                  onChange={e => update(i, 'amount_thb', parseFloat(e.target.value) || 0)}
+                  value={c.estimated_cost_thb || ''}
+                  onChange={e => update(i, 'estimated_cost_thb', parseFloat(e.target.value) || 0)}
                 />
               </div>
             </div>
@@ -67,7 +67,7 @@ export default function ClaimsList({ claims, onChange }: Props) {
           </div>
         ))}
       </div>
-      <button type="button" className="btn-secondary" onClick={add}>+ เพิ่มรายการ · Add claim</button>
+      <button type="button" className="btn-secondary" onClick={add}>+ เพิ่มรายการ · Add item</button>
     </section>
   );
 }

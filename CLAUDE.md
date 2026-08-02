@@ -1,118 +1,124 @@
-# RoomWitness
+# AssetWitness
 
-Agentic AI pipeline that helps Bangkok renters dispute unfair security-deposit deductions.
-Renter uploads move-in photos, move-out photos, and the lease; the system returns 3
-ready-to-file Thai legal documents (OCPB complaint, deposit demand letter, evidence
-summary). BDI Bangkok Hackathon 2026. Team: KP (lead), Beam (frontend + pitch), Tuey (tech).
+Agentic AI pipeline that certifies handover condition across DAD's (Dhanarak Asset
+Development Co., Ltd.) property portfolio. Facilities staff or an occupant submits
+condition photos and the occupancy/fit-out agreement; the system returns a per-item
+responsibility verdict (normal wear / occupant / DAD / disputed) and up to 3
+ready-to-file Thai documents. Repositioned from RoomWitness (BDI Bangkok Hackathon
+2026), proposed for Sustainnovation 2026. Team: KP (lead, legal/policy research),
+Beam (frontend, pitch), Tuey (tech lead, pipeline + backend).
 
 ## 4-Agent Pipeline
 
-1. **CV Comparison** (`roomwitness-vlm/agent01_cv.py`) — compares move-in vs move-out
-   photos per landlord claim. Llama-4-Scout via Groq.
-2. **Evidence Extraction** (`roomwitness-vlm/agent02_evidence.py`) — reads chat
-   screenshots (LINE/WhatsApp/SMS), surfaces landlord/tenant promises. Llama-4-Scout.
-3. **Legal Reasoning** (`roomwitness-rag/rag_agent.py`) — RAG over Thai law
-   (CCC §537-571 + OCPB 2025) in ChromaDB, classifies each claim. Groq + local embeddings.
-4. **Document Generation** — spec only, not yet built. Synthesizes the 3 Thai documents.
+1. **Condition Comparison** (`assetwitness-pipeline/agent01_condition_comparison/`) —
+   compares prior vs current condition photos per item. Llama-4-Scout via Groq.
+2. **Agreement Parser** (`assetwitness-pipeline/agent02_agreement_parser/`) — reads
+   the occupancy/fit-out agreement (pdfplumber), produces `agreement_summary`,
+   `responsibility_map`, and `non_compliant_clauses`. Typhoon v2.
+3. **Asset Policy Reasoning** (`assetwitness-pipeline/agent03_asset_policy_reasoning/`)
+   — hard rules + ChromaDB RAG over the State Property Act/MOF Regulation corpus +
+   Typhoon v2, classifies each item's `responsibility`.
+4. **Report Generator** (`assetwitness-pipeline/services/agent04_service.py`) —
+   Typhoon v2 + ReportLab (Platypus), synthesizes the 3 Thai documents.
 
 ## Repo Map
 
-- `roomwitness-rag/` — Groq LLM + ChromaDB RAG. `rag_agent.py` (classifier),
-  `build_corpus.py` (scrape→chunk→embed), `corpus/` (CCC + OCPB text), `chroma_db/`
-  (vector store), `portal/app.py` (Flask app — runs the FULL working pipeline via
-  `/full-analysis`; reference UI, not the final product UI).
-- `roomwitness-vlm/` — vision agents (`agent01_cv.py`, `agent02_evidence.py`).
-- `pencil_design/BDI-roomwitness.pen` — product UI design (Pencil). Owner: Beam.
-- `docs/room_witness_allignment.md` — full operational alignment doc.
+- `assetwitness-pipeline/` — 4 FastAPI microservices (`services/agent0{1,2,3,4}_service.py`,
+  ports 8001–8004) plus their supporting Python packages
+  (`agent01_condition_comparison/`, `agent02_agreement_parser/`,
+  `agent03_asset_policy_reasoning/` incl. `asset_policy_corpus/`, `retriever.py`,
+  `reasoner.py`, `document_selector.py`), `shared/` (Typhoon client), `chroma_db/`
+  (vector store, gitignored), `outputs/` (generated PDFs, gitignored).
+- `express-backend/` — Express/TypeScript proxy. Also owns the Portfolio Condition
+  Dashboard's Postgres persistence (`prisma/`, `src/models/handoverCaseRepo.ts`,
+  `src/controllers/dashboardController.ts`).
+- `nextjs-frontend/` — Next.js 16 App Router web UI: `/app` (wizard + pipeline),
+  `/dashboard` (Portfolio Condition Dashboard), `/move-in` (baseline condition vault).
+- `assetwitness-app/` — Expo/React Native mobile app, same Express API.
+- `docs/AssetWitness.md` — source pitch/requirements doc (not rewritten — this is
+  the doc everything else aligns to).
 
 ## Data Contracts (drive the frontend)
 
-These are the existing JSON shapes the UI renders. Do not invent fields.
+These are the current JSON shapes the UI renders. Do not invent fields.
 
-**Agent 01 CV** — `run_cv_assessment()` returns `{claim_assessments[], summary, ...}`.
-Each assessment:
+**Agent 01 condition** — `POST /api/v1/agent01` (multipart: `prior_condition`,
+`current_condition` images + `condition_items` JSON) returns:
 ```
-{ item, move_in_condition, move_out_condition, change_detected, change_description,
-  wear_and_tear, wear_and_tear_reason, likely_tenant_caused,
-  supports_landlord_claim: "YES"|"NO"|"PARTIAL", confidence, confidence_reason,
-  low_visibility, notes }
-```
-summary: `{ total_claims, supported_claims, disputed_claims, partial_claims,
-low_confidence_items[], total_disputed_amount }`
-
-**Agent 02 evidence** — `run_evidence_analysis()`:
-```
-{ screenshots_processed, platforms_detected[], all_landlord_promises[],
-  all_tenant_promises[], all_deposit_mentions[], total_messages_extracted,
-  evidence_text, screenshot_details[{overall_tone, messages[], ...}] }
+{ condition_map: [{ item_id, item, verdict: "PRE_EXISTING"|"UNCHANGED"|"NORMAL_WEAR"|"NEW_DAMAGE"|null,
+  attributable_party: "DAD"|"OCCUPANT"|"UNDETERMINED", confidence, prior_condition, current_condition,
+  status: "ok"|"unverifiable_by_cv", wear_and_tear, wear_and_tear_reason, notes }],
+  model_used }
 ```
 
-**Agent 03 legal** — `classify_claim(claim, cv_evidence, contract_clause)`:
+**Agent 02 agreement** — `POST /api/v1/agent02` (multipart: `agreement_file` +
+`condition_items` JSON + occupancy/fee fields):
 ```
-{ classification: "LAWFUL"|"DISPUTED"|"UNLAWFUL", confidence, dispute_amount,
-  dimensions: { pre_existence, wear_and_tear, proportionality, contractual_clarity },
-  legal_basis: [{ section, source: "CCC"|"OCPB", excerpt, favors: "TENANT"|"LANDLORD" }],
-  summary_th, retrieved_sections[] }
+{ pdf_filename, responsibility_map: [{ item_id, item, estimated_cost_thb, occupant_responsible,
+  agreement_clause, clause_found, pre_existing_disclosed, notes }],
+  agreement_summary: { occupancy_start, occupancy_end, notice_period_days, monthly_fee_thb,
+  deposit_amount_thb, deposit_months }, non_compliant_clauses: [{ clause_text, reason_non_compliant }],
+  ocr_used, extraction_confidence }
 ```
 
-**Agent 04 docs** — not built. Output: 3 Thai docs (OCPB complaint, deposit demand,
-evidence summary).
-
-## HTTP API (portal/app.py — the real frontend contract)
-
-Product endpoint: **`POST /full-analysis`** (multipart form). Runs CV → evidence → legal
-per claim.
-
-- **Required:** `claims` — JSON array of `{item, description, amount_thb}` (≥1, else 400).
-  **Claims are the only required input** — the renter types what the landlord is charging for.
-- **Optional:** `move_in_image`, `move_out_image` (single each), `screenshots` (multiple),
-  `contract_clause`, `manual_landlord_promises`, `manual_tenant_promises`. Photos are
-  "optional but recommended".
-
-Response:
+**Agent 03 asset policy** — `POST /api/v1/agent03` (JSON: `condition_items`,
+`condition_map`, `agreement_clause`, `case_type`, `handover_report_signed`):
 ```
-{ claims: [ { claim: {item, description, amount_thb},
-              cv:    {move_in_condition, move_out_condition, wear_and_tear,
-                      likely_tenant_caused, low_visibility,
-                      supports_landlord_claim: "YES"|"NO"|"PARTIAL", confidence, ...},
-              legal: {classification, confidence, dimensions, legal_basis[], summary_th, ...} } ],
-  cv_summary:       {total_claims, supported_claims, disputed_claims, partial_claims,
-                     total_disputed_amount},
-  evidence_summary: {landlord_promises[], tenant_promises[], deposit_mentions[], platforms[]} | null,
-  images_used:      {move_in, move_out} }
+{ needs_dispute_resolution, documents_to_generate: string[], total_estimated_cost_thb,
+  total_dad_responsibility_thb, total_occupant_responsibility_thb,
+  item_verdicts: [{ item_id, item, estimated_cost_thb,
+  responsibility: "NORMAL_WEAR"|"OCCUPANT_RESPONSIBILITY"|"DAD_RESPONSIBILITY"|"DISPUTED",
+  reasoning_th, reasoning_en, citations[], recommended_action_th, responsibility_confidence_pct }],
+  case_summary_th, case_summary_en }
 ```
-Each claim card has TWO verdicts: `cv.supports_landlord_claim` (photo) AND
-`legal.classification` (law).
 
-Other routes: `POST /extract-contract` (file → `{text}`), `POST /extract-evidence`,
-`POST /assess-damage`, `POST /analyze` (single claim, legal only), `GET /health`
-(`{corpus_loaded}`).
+**Agent 04 report** — `POST /api/v1/agent04` (JSON: `documents_to_generate`, the 3
+totals, `item_verdicts`, `case_summary_th/en`). Output: up to 3 Thai PDFs —
+`condition_certification_report` (always), `fit_out_completion_checklist` (fit-out
+cases), `liability_summary` (only when `needs_dispute_resolution`).
 
-> **The recoverable-฿ total is NOT backend-computed.** Only `cv_summary.total_disputed_amount`
-> (sum of photo-disputed claims) exists; deposit/rent fields are collected in the portal but
-> never sent. The "฿X of ฿Y recoverable" verdict in the design is illustrative — needs wiring.
+## HTTP API (express-backend — the real frontend contract)
+
+- `POST /run/agent0{1,2,3,4}` — direct per-agent proxy, used by the Next.js wizard.
+- `POST /full-analysis` — mobile-only orchestration of Agents 01→02→03 in one call,
+  returns `HandoverAnalysis` (see `assetwitness-app/src/lib/types.ts`).
+- `POST /generate-documents` — Agent 04 proxy with absolute `download_url` rewriting.
+- `POST /extract-agreement` — PDF → `{text}` (pdf-parse).
+- `GET /download/:handoverId/:docType` — streams a generated PDF.
+- `POST /dashboard/cases`, `GET /dashboard/summary` — Portfolio Condition Dashboard.
 
 ## Run
 
 ```bash
-cd roomwitness-rag
+cd assetwitness-pipeline
 pip install -r requirements.txt
-cp .env.example .env            # set GROQ_API_KEY
-python build_corpus.py          # build ChromaDB (skips if already loaded)
-flask --app portal/app.py run   # debug portal on :5001
-python rag_agent.py             # CLI test: sample wall-paint claim
+cp .env.example .env             # set GROQ_API_KEY + TYPHOON_API_KEY
+python agent03_asset_policy_reasoning/seed_corpus.py   # seed ChromaDB (run ONCE)
 
-cd ../roomwitness-vlm
-python agent01_cv.py move_in.jpg move_out.jpg
+python -m uvicorn services.agent01_service:app --port 8001 --reload
+python -m uvicorn services.agent02_service:app --port 8002 --reload
+python -m uvicorn services.agent03_service:app --port 8003 --reload
+python -m uvicorn services.agent04_service:app --port 8004 --reload
+
+cd ../express-backend
+npm install && cp .env.example .env
+npm run db:up && npm run db:generate   # Portfolio Dashboard Postgres (docker)
+# apply prisma/migrations/*/migration.sql by hand — see CONTRIBUTING.md
+npm run dev
+
+cd ../nextjs-frontend
+npm install && npm run dev
 ```
 
-Env: `GROQ_API_KEY` (required), `CHROMA_PATH` (default `./chroma_db`),
-`GROQ_MODEL` (default `llama-3.3-70b-versatile`), `EMBED_MODEL`.
+Env: `GROQ_API_KEY`, `TYPHOON_API_KEY` (required, `assetwitness-pipeline/.env`),
+`DATABASE_URL` (required, `express-backend/.env`, points at the dashboard Postgres).
 
-## Frontend Conventions (Beam)
+## Frontend Conventions
 
-- Stack: Next.js 14 + Tailwind + ShadCN UI (per alignment doc).
 - Bilingual TH + EN: Thai primary, English secondary line.
-- Classification color tokens: `LAWFUL` = green, `DISPUTED` = amber, `UNLAWFUL` = red.
-- 4-screen flow: Upload → Analyzing (pipeline) → Results (claims + damage map) →
-  Documents. Design lives in `pencil_design/BDI-roomwitness.pen`.
+- Responsibility color tokens: `NORMAL_WEAR`/`DAD_RESPONSIBILITY` = green,
+  `DISPUTED` = amber, `OCCUPANT_RESPONSIBILITY` = red.
+- Web flow: Landing → `/app` (4-step wizard: items → photos → agreement → review) →
+  pipeline results inline → document downloads. No paywall — this is a DAD-side
+  platform/processing license, not a consumer per-transaction product (see
+  `docs/AssetWitness.md` Business Model).

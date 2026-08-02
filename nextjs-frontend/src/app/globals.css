@@ -1,9 +1,9 @@
-/* RoomWitness */
+/* AssetWitness */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Colors: roomwitness-app mobile theme (src/lib/theme.ts LIGHT). Shadows/radius/
+  /* Colors: assetwitness-app mobile theme (src/lib/theme.ts LIGHT). Shadows/radius/
      layout kept from the AIA-style pass — only the palette reverted. */
   --green:  #059669; --green-bg: #ECFDF5;
   --red:    #EF4444; --red-bg:   #FEF2F2;

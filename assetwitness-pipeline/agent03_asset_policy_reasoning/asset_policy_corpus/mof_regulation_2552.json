@@ -1,0 +1,41 @@
+[
+  {
+    "chunk_id": "MOF_2552_scope",
+    "law_name_th": "ระเบียบกระทรวงการคลังว่าด้วยการจัดหาประโยชน์ในที่ราชพัสดุ พ.ศ. 2552",
+    "law_name_en": "MOF Regulation on Benefit-Generation (Leasing) of State Property B.E. 2552 (2009)",
+    "clause": "Scope — governs leasing/benefit-generation arrangements on state property",
+    "effective_date": "2009",
+    "text_th": "ระเบียบนี้กำหนดหลักเกณฑ์การจัดหาประโยชน์ในที่ราชพัสดุ รวมถึงการให้เช่าแก่หน่วยงานราชการและเอกชน ภายใต้การกำกับดูแลของกรมธนารักษ์",
+    "text_en": "This Regulation sets the rules for benefit-generation arrangements on state property, including leasing to government agencies and private parties, under Treasury Department oversight.",
+    "applies_to": "both",
+    "topic_tags": "scope,leasing,benefit_generation,treasury_department",
+    "legal_implication": "This is the direct functional analog to a standard lease law for state-property occupancy — the closest real, citable equivalent to a private-sector lease statute for this handover.",
+    "agent03_use": "SCOPE — the primary regulation to cite for occupancy/lease-term matters on DAD-managed property"
+  },
+  {
+    "chunk_id": "MOF_2552_return_notice",
+    "law_name_th": "ระเบียบกระทรวงการคลังว่าด้วยการจัดหาประโยชน์ในที่ราชพัสดุ พ.ศ. 2552",
+    "law_name_en": "MOF Regulation on Benefit-Generation (Leasing) of State Property B.E. 2552 (2009)",
+    "clause": "Return-of-property notice period",
+    "effective_date": "2009",
+    "text_th": "ผู้ครอบครองต้องส่งมอบที่ราชพัสดุคืนแก่กรมธนารักษ์ภายใน 30 วันนับแต่ได้รับแจ้ง",
+    "text_en": "An occupant must return state property to the Treasury Department within 30 days of notice.",
+    "applies_to": "occupant",
+    "topic_tags": "return_notice,30_days,move_out,occupancy_end",
+    "legal_implication": "Confirmed provision — sets the baseline notice period for move-out handovers. Use directly for occupancy_end / notice_period_days framing.",
+    "agent03_use": "Cite for move-out case_type notice-period questions; this is a confirmed provision, not a placeholder"
+  },
+  {
+    "chunk_id": "PROCUREMENT_2560_inspection_acceptance",
+    "law_name_th": "พระราชบัญญัติการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. 2560",
+    "law_name_en": "Public Procurement and Supplies Management Act B.E. 2560 (2017)",
+    "clause": "Inspection and acceptance of completed work/supplies (การตรวจรับพัสดุ)",
+    "effective_date": "2017",
+    "text_th": "การตรวจรับพัสดุหรืองานจ้างของหน่วยงานรัฐต้องมีการตรวจสอบสภาพและความสมบูรณ์ก่อนรับมอบ",
+    "text_en": "State agencies must inspect and verify the condition and completeness of procured supplies or contracted work before formal acceptance.",
+    "applies_to": "dad",
+    "topic_tags": "fit_out,inspection_acceptance,completion_checklist,procurement",
+    "legal_implication": "A weaker fit than the leasing regulation (this Act is oriented at goods/construction procurement, not tenant occupancy), but its inspection-acceptance framing is the closest real analog for a fit-out completion checklist specifically.",
+    "agent03_use": "Cite for fit_out_inspection case_type only, as supporting framing for the fit-out completion checklist document, not as the primary basis for occupant/DAD responsibility splits"
+  }
+]

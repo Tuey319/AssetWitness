@@ -1,59 +1,57 @@
 import { z } from 'zod';
 
-const claimSchema = z.object({
-  claim_id:    z.string(),
-  item:        z.string(),
-  description: z.string(),
-  amount_thb:  z.number(),
+const conditionItemSchema = z.object({
+  item_id:            z.string(),
+  item:                z.string(),
+  description:         z.string(),
+  estimated_cost_thb:  z.number(),
 });
 
-// Agent 01 — multipart body (claims is JSON-encoded string)
+// Agent 01 — multipart body (condition_items is JSON-encoded string)
 export const agent01BodySchema = z.object({
-  claims: z.string().default('[]'),
+  condition_items: z.string().default('[]'),
 });
 
 // Agent 02 — multipart body
 export const agent02BodySchema = z.object({
-  claims:                   z.string().default('[]'),
-  contract_clause:          z.string().default(''),
-  lease_start:              z.string().default(''),
-  lease_end:                z.string().default(''),
-  deposit_amount:           z.string().default('0'),
-  monthly_rent:             z.string().default('0'),
-  manual_landlord_promises: z.string().default(''),
-  manual_tenant_promises:   z.string().default(''),
+  condition_items: z.string().default('[]'),
+  agreement_clause: z.string().default(''),
+  occupancy_start:  z.string().default(''),
+  occupancy_end:    z.string().default(''),
+  monthly_fee:      z.string().default('0'),
 });
 
 // Agent 03 — JSON body
 export const agent03BodySchema = z.object({
-  claims:              z.array(claimSchema),
-  damage_map:          z.array(z.unknown()).default([]),
-  contract_clause:     z.string().default(''),
-  landlord_unit_count: z.number().default(0),
-  has_void_clause:     z.boolean().default(false),
+  condition_items:        z.array(conditionItemSchema),
+  condition_map:          z.array(z.unknown()).default([]),
+  agreement_clause:       z.string().default(''),
+  case_type:              z.enum(['move_in', 'move_out', 'fit_out_inspection']).default('move_out'),
+  handover_report_signed: z.boolean().default(false),
 });
 
 // Agent 04 — JSON body
 export const agent04BodySchema = z.object({
-  documents_to_generate: z.array(z.string()),
-  total_unlawful_thb:    z.number(),
-  // Optional rich context from Agent 03 (used for richer document content)
-  verdicts:              z.array(z.unknown()).optional().default([]),
-  case_summary_th:       z.string().optional().default(''),
-  case_summary_en:       z.string().optional().default(''),
-  claims:                z.array(z.unknown()).optional().default([]),
+  documents_to_generate:              z.array(z.string()),
+  total_estimated_cost_thb:           z.number(),
+  total_dad_responsibility_thb:       z.number().optional().default(0),
+  total_occupant_responsibility_thb:  z.number().optional().default(0),
+  item_verdicts:                      z.array(z.unknown()).optional().default([]),
+  case_summary_th:                    z.string().optional().default(''),
+  case_summary_en:                    z.string().optional().default(''),
 });
 
-// POST /generate-documents — JSON body (extra client fields like tenant/landlord
+// POST /generate-documents — JSON body (extra client fields like occupant/DAD
 // PII are stripped; only what Agent 04 consumes is forwarded)
 export const generateDocumentsBodySchema = z.object({
   documents_to_generate: z.array(z.string())
-    .default(['demand_letter', 'evidence_summary', 'ocpb_complaint']),
-  total_unlawful_thb:    z.number().default(0),
-  verdicts:              z.array(z.unknown()).optional().default([]),
-  case_summary_th:       z.string().optional().default(''),
-  case_summary_en:       z.string().optional().default(''),
-  claims:                z.array(z.unknown()).optional().default([]),
+    .default(['condition_certification_report']),
+  total_estimated_cost_thb:           z.number().default(0),
+  total_dad_responsibility_thb:       z.number().optional().default(0),
+  total_occupant_responsibility_thb:  z.number().optional().default(0),
+  item_verdicts:                      z.array(z.unknown()).optional().default([]),
+  case_summary_th:                    z.string().optional().default(''),
+  case_summary_en:                    z.string().optional().default(''),
 });
 
 export type Agent01Body = z.infer<typeof agent01BodySchema>;

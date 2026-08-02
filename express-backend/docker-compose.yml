@@ -1,0 +1,21 @@
+# Pinned explicitly — compose otherwise derives the project name from the
+# containing directory, which breaks silently on a future move (see
+# landing/admin-server's docker-compose.yml for the incident this guards against).
+name: assetwitness-backend
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: assetwitness
+      POSTGRES_PASSWORD: assetwitness
+      POSTGRES_DB: assetwitness
+    ports:
+      # 5432/5434/5436/5442 taken by other local/project Postgres instances — use 5438.
+      - '5438:5432'
+    volumes:
+      - assetwitness_pgdata:/var/lib/postgresql/data
+
+volumes:
+  assetwitness_pgdata:

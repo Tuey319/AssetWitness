@@ -1,16 +1,16 @@
-// Free, on-device move-in photo vault — saved at lease start, reused (up to a
-// year later) when the tenant files a paid claim at move-out. localStorage is
-// enough here: no accounts, no server round-trip, just needs to outlive a tab close.
-export interface MoveInRecord {
+// On-device baseline condition photo vault — saved at occupancy start, reused
+// later when a handover is processed. localStorage is enough here: no accounts,
+// no server round-trip, just needs to outlive a tab close.
+export interface ConditionRecord {
   id: string;
   createdAt: string;
   label: string;
   photoDataUrls: string[];
 }
 
-const KEY = 'roomwitness-movein-records';
+const KEY = 'assetwitness-condition-records';
 
-export function getMoveInRecords(): MoveInRecord[] {
+export function getConditionRecords(): ConditionRecord[] {
   if (typeof window === 'undefined') return [];
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? '[]');
@@ -19,8 +19,8 @@ export function getMoveInRecords(): MoveInRecord[] {
   }
 }
 
-export function addMoveInRecord(r: MoveInRecord) {
-  const next = [r, ...getMoveInRecords()];
+export function addConditionRecord(r: ConditionRecord) {
+  const next = [r, ...getConditionRecords()];
   localStorage.setItem(KEY, JSON.stringify(next));
 }
 

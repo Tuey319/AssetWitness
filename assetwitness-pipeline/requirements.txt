@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+groq
+chromadb
+pdfplumber
+reportlab
+# Pinned <1.0: langchain-core 1.x pulls in a langsmith release requiring
+# xxhash + uuid_utils (native DLLs), which Windows Application Control blocks
+# on this dev machine. langchain-core 0.3.x avoids that dependency chain.
+langchain-openai<1.0
+langchain-core<1.0
+pydantic
+pillow

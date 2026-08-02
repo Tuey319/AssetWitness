@@ -2,9 +2,9 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addMoveInRecord } from '@/lib/moveInVault';
+import { addConditionRecord } from '@/lib/moveInVault';
 
-export default function MoveInPage() {
+export default function BaselineConditionPage() {
   const router = useRouter();
   const [label, setLabel] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -28,13 +28,13 @@ export default function MoveInPage() {
 
   const save = () => {
     if (prevs.length === 0) { alert('Add at least one photo.'); return; }
-    addMoveInRecord({
-      id: `MI-${Date.now()}`,
+    addConditionRecord({
+      id: `CR-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      label: label.trim() || 'My apartment',
+      label: label.trim() || 'Unnamed space',
       photoDataUrls: prevs,
     });
-    alert("Saved — free. We'll keep these until you move out, even a year from now.");
+    alert('Saved — kept on this device until the next handover.');
     router.push('/app');
   };
 
@@ -43,18 +43,18 @@ export default function MoveInPage() {
       <header>
         <div className="header-inner">
           <div>
-            <h1>RoomWitness</h1>
-            <p className="subtitle">Document your move-in · Free, no AI used yet</p>
+            <h1>AssetWitness</h1>
+            <p className="subtitle">Document baseline condition · saved for the next handover</p>
           </div>
         </div>
       </header>
 
       <main>
         <section className="card">
-          <h2>บันทึกตอนเข้าอยู่ <span className="h2-en">Move-in record</span></h2>
+          <h2>บันทึกสภาพเริ่มต้น <span className="h2-en">Baseline condition record</span></h2>
           <div className="field">
-            <label>ชื่อห้อง/ที่พัก <span className="lbl-en">Property nickname</span></label>
-            <input type="text" placeholder="e.g. Ideo Mobi Room 12B" value={label} onChange={e => setLabel(e.target.value)} />
+            <label>ชื่อพื้นที่ <span className="lbl-en">Space nickname</span></label>
+            <input type="text" placeholder="e.g. Building C, Floor 5, Unit 12" value={label} onChange={e => setLabel(e.target.value)} />
           </div>
 
           <input ref={inputRef} type="file" accept="image/*" multiple className="dz-input"
@@ -75,7 +75,7 @@ export default function MoveInPage() {
         </section>
 
         <div className="submit-row">
-          <button type="button" onClick={save}>Save move-in record — free</button>
+          <button type="button" onClick={save}>Save baseline condition record</button>
         </div>
       </main>
     </>

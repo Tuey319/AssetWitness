@@ -1,0 +1,28 @@
+[
+  {
+    "chunk_id": "SPA_2562_definition",
+    "law_name_th": "พระราชบัญญัติที่ราชพัสดุ พ.ศ. 2562",
+    "law_name_en": "State Property Act B.E. 2562 (2019)",
+    "clause": "มาตรา 6 — คำนิยามที่ราชพัสดุ",
+    "effective_date": "2019",
+    "text_th": "\"ที่ราชพัสดุ\" หมายความว่า อสังหาริมทรัพย์อันเป็นทรัพย์สินของแผ่นดินทุกชนิด เว้นแต่สาธารณสมบัติของแผ่นดินตามที่กฎหมายกำหนดไว้เป็นการเฉพาะ",
+    "text_en": "\"State property\" means immovable property that is property of the State of every kind, except public domain property specifically provided for by other law.",
+    "applies_to": "both",
+    "topic_tags": "scope,definition,state_property,applicability",
+    "legal_implication": "Establishes that Building C, Pod Duang, and the Government Complex buildings DAD manages fall within this Act's scope as state property.",
+    "agent03_use": "SCOPE — confirms the Act governs any handover on DAD-managed premises"
+  },
+  {
+    "chunk_id": "SPA_2562_delegation",
+    "law_name_th": "พระราชบัญญัติที่ราชพัสดุ พ.ศ. 2562",
+    "law_name_en": "State Property Act B.E. 2562 (2019)",
+    "clause": "Delegation of governance/maintenance/use rules to Ministerial Regulation",
+    "effective_date": "2019",
+    "text_th": "พระราชบัญญัตินี้กำหนดให้การปกครอง ดูแล บำรุงรักษา ใช้ และจัดหาประโยชน์ในที่ราชพัสดุ เป็นไปตามระเบียบที่กระทรวงการคลังกำหนด",
+    "text_en": "The Act delegates the detailed rules for governance, care, maintenance, use, and benefit-generation (including leasing) of state property to regulations issued by the Ministry of Finance.",
+    "applies_to": "both",
+    "topic_tags": "delegation,ministerial_regulation,governance,maintenance",
+    "legal_implication": "The Act itself does not set granular handover/condition/wear rules — those live in the MOF Regulation (see mof_regulation_2552.json) and in DAD's own implementing policies.",
+    "agent03_use": "FRAMING — explains why this Act is cited for scope/authority but not for specific damage-vs-wear thresholds"
+  }
+]

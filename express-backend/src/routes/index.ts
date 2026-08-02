@@ -5,6 +5,7 @@ import upload, { agent01Fields, agent02Fields, fullAnalysisFields } from '../mid
 import * as agentController from '../controllers/agentController';
 import * as extractController from '../controllers/extractController';
 import { runFullAnalysis } from '../controllers/fullAnalysisController';
+import * as dashboardController from '../controllers/dashboardController';
 
 const router = Router();
 
@@ -27,21 +28,24 @@ router.post('/run/agent04', agentController.runAgent04);
 
 router.post('/generate-documents', agentController.generateDocuments);
 
-router.get('/download/:caseId/:docType', async (req, res, next) => {
+router.get('/download/:handoverId/:docType', async (req, res, next) => {
   try {
-    const { caseId, docType } = req.params;
-    const url = `${config.agents.agent04}/api/v1/download/${encodeURIComponent(caseId)}/${encodeURIComponent(docType)}`;
+    const { handoverId, docType } = req.params;
+    const url = `${config.agents.agent04}/api/v1/download/${encodeURIComponent(handoverId)}/${encodeURIComponent(docType)}`;
     const response = await axios.get(url, { responseType: 'stream' });
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${docType}_${caseId}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${docType}_${handoverId}.pdf"`);
     (response.data as NodeJS.ReadableStream).pipe(res);
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/extract-contract', upload.single('contract_file'), extractController.extractContract);
+router.post('/extract-agreement', upload.single('agreement_file'), extractController.extractContract);
 
 router.post('/full-analysis', upload.fields(fullAnalysisFields), runFullAnalysis);
+
+router.post('/dashboard/cases', dashboardController.createCase);
+router.get('/dashboard/summary', dashboardController.getSummary);
 
 export default router;
