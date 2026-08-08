@@ -46,6 +46,24 @@ A companion Expo/React Native app (`assetwitness-app/`) consumes the same Expres
         Express + Prisma + Postgres — one summary row per handover
 ```
 
+## Implementation Status
+
+Audited against actual code, not filenames — see each service's entrypoint for detail.
+
+| Component | Status | Notes |
+|---|---|---|
+| Express — agent proxy (`/run/agent0{1-4}`, `/generate-documents`, `/download`) | FULL | Thin Zod-validated axios proxy to the 4 FastAPI services; no mock branches. |
+| Express — `/extract-agreement` | FULL | Real `pdf-parse` extraction; images are explicitly rejected (no OCR fallback, by design). |
+| Express — `/full-analysis` (mobile) | FULL | Server-side orchestration chaining Agent 01→02→03, maps to `HandoverAnalysis`. |
+| Express — Portfolio Dashboard (`/dashboard/cases`, `/dashboard/summary`) | FULL | Real Prisma/Postgres persistence; wired end-to-end (wizard POSTs a row after Agent 04, `/dashboard` page reads the rollup). |
+| Agent 01 — Condition Comparison | FULL | Real Groq vision call (`qwen/qwen3.6-27b`) + deterministic verdict mapping. Only stubs out when literally no photos are uploaded (explicit `unverifiable_by_cv`, by design). |
+| Agent 02 — Agreement Parser | FULL | Real `pdfplumber` extraction + Typhoon v2 (LangChain) parse chain with a one-shot JSON-correction retry. Only stubs out when no agreement text is provided at all (by design). |
+| Agent 03 — Asset Policy Reasoning | FULL | Real hard-rules pass + ChromaDB RAG (corpus is seeded, `chroma.sqlite3` populated) + Typhoon v2 per-item reasoning. Falls back to a labeled "TYPHOON_API_KEY not configured" response only if the key is missing. |
+| Agent 03 — policy corpus | PARTIAL | Two real corpora (State Property Act 2562, MOF Regulation 2552) plus 2 entries explicitly tagged `[UNCONFIRMED]`/`placeholder_pending_dad_policy`, pending real DAD documents — already self-documented in the corpus JSON and `docs/asset-policy-methodology.md`. |
+| Agent 04 — Report Generator | FULL | Real Typhoon v2 narrative generation + ReportLab/Platypus PDF rendering to local disk. Falls back to canned Thai boilerplate only if `TYPHOON_API_KEY` is unset. Thai font path is hardcoded to `C:\Windows\Fonts\...` (Windows-only, no Linux/Mac fallback path). |
+| Backend ↔ pipeline wiring | FULL | Confirmed live: `express-backend/src/config` points at the 4 agent URLs, `agentClient.ts` makes real HTTP calls, `nextjs-frontend/src/app/app/page.tsx` drives all 4 agents in sequence and posts the dashboard summary. |
+| `/move-in` baseline vault (frontend) | PARTIAL | Real feature, but client-side only (`localStorage` via `moveInVault.ts`) — no backend persistence or endpoint. |
+
 ## Quick Start
 
 > **Windows users:** use `python -m uvicorn` and `python -m pip` — plain `uvicorn`/`pip` fail due to the uv trampoline issue.
